@@ -38,7 +38,7 @@ loadLocalEnv();
 
 export const app = express();
 app.disable("x-powered-by");
-app.set("trust proxy", 1);
+app.set("trust proxy", process.env.NODE_ENV === "production" ? Number(process.env.TRUST_PROXY_HOPS || "1") : 0);
 const allowedOrigins = new Set((process.env.CORS_ORIGINS || "")
   .split(",")
   .map((origin) => origin.trim())
@@ -1480,8 +1480,20 @@ app.get("/api/whatsapp/threads", requireAuth, (req, res) => {
         messageCount: messages.length
       };
     })
-    .filter(Boolean)
-    .sort((a, b) => (String((b as any).lastMessageAt) < String((a as any).lastMessageAt) ? -1 : 1));
+    .filter((thread): thread is NonNullable<typeof thread> => thread !== null)
+    .sort((left, right) => (String(right.lastMessageAt) < String(left.lastMessageAt) ? -1 : 1))
+    .map((thread) => ({
+      customerId: thread.customerId,
+      company: thread.company,
+      country: thread.country,
+      contact: thread.contact,
+      phoneNumber: thread.phoneNumber,
+      waProfileName: thread.waProfileName,
+      unreadCount: thread.unreadCount,
+      lastMessage: thread.lastMessage,
+      lastMessageAt: thread.lastMessageAt,
+      messageCount: thread.messageCount
+    }));
   res.json({ threads });
 });
 
@@ -1693,8 +1705,9 @@ app.post("/api/whatsapp/binding/web-scan/start", requireAuth, asyncRoute(async (
     await store.persist();
 
     res.json({ clientId, bindingId: binding.id, status: "qr-pending" });
-  } catch (error: any) {
-    res.status(500).json({ message: "启动扫码失败: " + error.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error || "");
+    res.status(500).json({ message: `启动扫码失败: ${message}` });
   }
 }));
 
@@ -1887,8 +1900,6 @@ app.post("/api/whatsapp/webhook/twilio", asyncRoute(async (req, res) => {
 
 app.get("/api/todos", requireAuth, (req, res) => {
   const store = getStore();
-  const archived = archiveExpiredTodos(store.todos, new Date());
-  if (archived.length) void store.persist();
   const { todos } = store;
   const scoped = todos.filter((todo) => canSeePersonalData(req.user!, todo.ownerId));
   res.json({ todos: scoped });
@@ -5654,8 +5665,6 @@ app.post("/api/tools/website-scrape/sync-opportunities", requireAuth, asyncRoute
 
 app.get("/api/dashboard/summary", requireAuth, (req, res) => {
   const store = getStore();
-  const archived = archiveExpiredTodos(store.todos, new Date());
-  if (archived.length) void store.persist();
   const { customers, todos, deals, reminders, knowledgeAssets, exams, wecomMessages, leads } = store;
   const scopedCustomers = customers.filter((customer) => canSeeOwner(req.user!, customer.ownerId, customer.teamId));
   const scopedLeads = leads.filter((lead) => canSeeOwner(req.user!, lead.ownerId, lead.teamId));
@@ -5693,10 +5702,11 @@ app.get("/api/dashboard/summary", requireAuth, (req, res) => {
   const weekEndKey = addDateKeyDays(weekStartKey, 6);
   const monthStartKey = `${todayKey.slice(0, 7)}-01`;
   const monthEndKey = new Date(Date.UTC(todayYear, todayMonth, 0)).toISOString().slice(0, 10);
-  const activeTodos = scopedTodos.filter((todo) => !isHistoricalTodo(todo));
+  const isDisplayHistorical = (todo: Todo) => isHistoricalTodo(todo) || shouldArchiveTodo(todo);
+  const activeTodos = scopedTodos.filter((todo) => !isDisplayHistorical(todo));
   const pendingTodos = activeTodos.filter((todo) => !todo.done);
   const overdueTodos = pendingTodos.filter((todo) => todo.priority === "high");
-  const historyTodos = scopedTodos.filter(isHistoricalTodo);
+  const historyTodos = scopedTodos.filter(isDisplayHistorical);
   const riskCustomers = scopedCustomers.filter((customer) => customer.nextReminder.includes("逾期") || customer.health < 60);
   const riskAmount = riskCustomers.reduce((sum, customer) => sum + customer.amount, 0);
   const forecastAmount = scopedDeals.reduce((sum, deal) => sum + deal.amount, 0);
@@ -5793,10 +5803,18 @@ app.get("/api/dashboard/summary", requireAuth, (req, res) => {
       risk: items.some((todo) => todo.priority === "high") ? "高" : items.some((todo) => todo.priority === "medium") ? "中" : "普通"
     };
   }).filter((row) => row.count > 0);
-  const weekLoad = ["一", "二", "三", "四", "五", "六", "日"].map((day, index) => ({
-    day,
-    count: pendingTodos.filter((_, todoIndex) => todoIndex % 7 === index).length + (index < Math.min(pendingTodos.length, 7) ? 1 : 0)
-  }));
+  // 工作台「周日历热度」需按每个待办真实的到期星期归类，而不是用数组下标 % 7 分桶。
+  // 只计入本周 [weekStartKey, weekEndKey] 之内的待办，避免历史/未来任务扭曲当周热量。
+  const weekLoad = ["一", "二", "三", "四", "五", "六", "日"].map((day, index) => {
+    const targetWeekday = index === 6 ? 0 : index + 1; // JS Date.getUTCDay(): 0=Sunday, 1..6=Mon..Sat
+    const count = pendingTodos.filter((todo) => {
+      const dueDateKey = todoDueDateKey(todo.dueAt);
+      if (!dueDateKey || dueDateKey < weekStartKey || dueDateKey > weekEndKey) return false;
+      const date = new Date(`${dueDateKey}T12:00:00Z`);
+      return Number.isFinite(date.getTime()) ? date.getUTCDay() === targetWeekday : false;
+    }).length;
+    return { day, count };
+  });
   const topRiskNames = riskCustomers.slice(0, 3).map((customer) => customer.company).join("、") || topDeals.slice(0, 2).map((deal) => deal.title).join("、") || "暂无高风险客户";
   const businessScopeLabel = req.user?.role === "sales" ? "本人业务" : req.user?.role === "manager" ? "团队业务" : "全局业务";
   res.json({
@@ -5893,7 +5911,8 @@ app.post("/api/dashboard/priority-tasks/batch-process", requireAuth, asyncRoute(
   const scopedCustomers = store.customers.filter((customer) => canSeeOwner(req.user!, customer.ownerId, customer.teamId));
   const scopedDeals = store.deals.filter((deal) => canSeeOwner(req.user!, deal.ownerId, deal.teamId) && !deal.archivedAt && deal.stage !== "成交" && deal.stage !== "丢单");
   const scopedTodos = store.todos.filter((todo) => canSeePersonalData(req.user!, todo.ownerId));
-  const pendingTodos = scopedTodos.filter((todo) => !todo.done && !isHistoricalTodo(todo));
+  const isDisplayHistorical = (todo: Todo) => isHistoricalTodo(todo) || shouldArchiveTodo(todo);
+  const pendingTodos = scopedTodos.filter((todo) => !todo.done && !isDisplayHistorical(todo));
   const priorityTasks = buildPriorityTasks(scopedDeals, scopedCustomers, pendingTodos).slice(0, 3);
   const created: Todo[] = [];
   for (const task of priorityTasks) {
@@ -6599,7 +6618,7 @@ async function callAiModel(config: AiModelConfig, prompt: string, maxInputChars 
 async function readAiJson<T>(response: globalThis.Response, endpoint: string): Promise<T> {
   const contentType = response.headers.get("content-type") || "";
   const text = await response.text();
-  let data: any = null;
+  let data: unknown = null;
   try {
     data = text ? JSON.parse(text) : null;
   } catch {
@@ -6610,8 +6629,9 @@ async function readAiJson<T>(response: globalThis.Response, endpoint: string): P
     throw new Error(`接口返回内容不是 JSON：${preview || "空响应"}`);
   }
   if (!response.ok) {
-    const providerMessage = data?.error?.message || data?.message || "";
-    const providerType = data?.error?.type || data?.error?.code || "";
+    const errorObj = (data && typeof data === "object" ? data : {}) as { error?: { message?: string; type?: string; code?: string }; message?: string };
+    const providerMessage = errorObj.error?.message || errorObj.message || "";
+    const providerType = errorObj.error?.type || errorObj.error?.code || "";
     const suffix = providerMessage ? `：${providerMessage}${providerType ? `（${providerType}）` : ""}` : "";
     throw new Error(`HTTP ${response.status}${suffix}`);
   }

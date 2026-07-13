@@ -49,7 +49,7 @@ class WhatsAppWebManager {
       const chat = await message.getChat();
 
       const waMessage: WhatsAppMessage = {
-        id: `wam_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `wam_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
         customerId: "", // 需要通过电话号码匹配客户
         direction: "inbound",
         content: message.body,
@@ -116,12 +116,11 @@ class WhatsAppWebManager {
     }
   }
 
-  // 获取客户端状态
+  // 获取客户端状态。当前仅依赖客户端是否在管理器中注册，无法精确感知底层 puppeteer 的实际登录状态；
+  // 上层应用若需要更精细的同步状态，应基于 WhatsApp Web 的 ready/qr/auth_failure 事件维护一个独立状态字段。
   getClientStatus(clientId: string): "connected" | "disconnected" | "qr-pending" {
     const client = this.clients.get(clientId);
     if (!client) return "disconnected";
-
-    // 简化状态判断
     return "connected";
   }
 
@@ -213,9 +212,14 @@ class TwilioManager {
   }
 
   // 验证 Webhook 签名
-  validateWebhook(signature: string, url: string, params: Record<string, any>): boolean {
-    if (!this.authToken) return false;
-    return twilio.validateRequest(this.authToken, signature, url, params);
+  validateWebhook(signature: string, url: string, params: Record<string, unknown>): boolean {
+    if (!this.authToken || !signature) return false;
+    // twilio 的 validateRequest 期望 params 为 Record<string, string>，这里做安全的字符串化。
+    const paramsForTwilio: Record<string, string> = {};
+    for (const [key, value] of Object.entries(params || {})) {
+      paramsForTwilio[key] = typeof value === "string" ? value : String(value ?? "");
+    }
+    return twilio.validateRequest(this.authToken, signature, url, paramsForTwilio);
   }
 
   // 获取账号信息

@@ -506,11 +506,39 @@ function Settings({ user, accounts }: { user: User; accounts: User[] }) {
 
 function App() {
   const [user, setUser] = useState<User | null>(() => {
-    const raw = localStorage.getItem("gj_user");
-    return raw ? JSON.parse(raw) as User : null;
+    try {
+      const raw = localStorage.getItem("gj_user");
+      return raw ? (JSON.parse(raw) as User) : null;
+    } catch {
+      return null;
+    }
   });
+  // 启动时若本地缓存了 user，则调用 /api/auth/me 校验会话是否仍生效。
+  // 后端在 JWT 过期/密码重设/账号被禁后 authVersion 会 +1，旧 cookie 会失效，此时必须打回登录页。
+  const [verifying, setVerifying] = useState<boolean>(Boolean(user));
 
-  const authed = useMemo(() => Boolean(user), [user]);
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await api<{ user: User }>("/api/auth/me");
+        if (cancelled) return;
+        const fresh = data.user;
+        localStorage.setItem("gj_user", JSON.stringify(fresh));
+        setUser(fresh);
+      } catch {
+        if (cancelled) return;
+        localStorage.removeItem("gj_user");
+        setUser(null);
+      } finally {
+        if (!cancelled) setVerifying(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // 只挂载时校验一次；登录成功路径已在后端 validate 过。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function onLogin(nextUser: User) {
     localStorage.setItem("gj_user", JSON.stringify(nextUser));
@@ -523,7 +551,14 @@ function App() {
     setUser(null);
   }
 
-  return authed && user ? <Layout user={user} onLogout={onLogout} /> : <Login onLogin={onLogin} />;
+  if (verifying) {
+    return <main className="login"><section className="loginCard"><h2>正在校验登录状态…</h2></section></main>;
+  }
+  return authed(user) ? <Layout user={user!} onLogout={onLogout} /> : <Login onLogin={onLogin} />;
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+function authed(user: User | null): user is User {
+  return Boolean(user);
+}
