@@ -3729,7 +3729,7 @@ async function ensureSchema(pool: mysql.Pool) {
     operation_code VARCHAR(40) NOT NULL,
     idempotency_key_hash CHAR(64) NOT NULL,
     request_hash CHAR(64) NOT NULL,
-    query_fingerprint CHAR(64) NOT NULL,
+    query_fingerprint VARCHAR(64) NOT NULL,
     execution_snapshot_json JSON NOT NULL,
     execution_snapshot_hash CHAR(64) NOT NULL,
     queue_bridge_version VARCHAR(10) NULL,
@@ -3747,7 +3747,7 @@ async function ensureSchema(pool: mysql.Pool) {
       GENERATED ALWAYS AS (
         IF(status IN ('queued','running','pause_requested','paused','cancel_requested'), owner_id, NULL)
       ) STORED,
-    active_query_fingerprint CHAR(64)
+    active_query_fingerprint VARCHAR(64)
       GENERATED ALWAYS AS (
         IF(status IN ('queued','running','pause_requested','paused','cancel_requested'), query_fingerprint, NULL)
       ) STORED,
@@ -3825,6 +3825,7 @@ async function ensureSchema(pool: mysql.Pool) {
     )`
   );
   await pool.query(`ALTER TABLE prospect_search_runs
+    MODIFY COLUMN query_fingerprint VARCHAR(64) NOT NULL,
     MODIFY COLUMN active_team_id VARCHAR(64)
       GENERATED ALWAYS AS (
         IF(status IN ('queued','running','pause_requested','paused','cancel_requested'), team_id, NULL)
@@ -3833,7 +3834,7 @@ async function ensureSchema(pool: mysql.Pool) {
       GENERATED ALWAYS AS (
         IF(status IN ('queued','running','pause_requested','paused','cancel_requested'), owner_id, NULL)
       ) STORED,
-    MODIFY COLUMN active_query_fingerprint CHAR(64)
+    MODIFY COLUMN active_query_fingerprint VARCHAR(64)
       GENERATED ALWAYS AS (
         IF(status IN ('queued','running','pause_requested','paused','cancel_requested'), query_fingerprint, NULL)
       ) STORED`);
