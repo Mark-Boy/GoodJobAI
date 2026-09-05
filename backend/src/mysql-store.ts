@@ -6012,7 +6012,7 @@ async function replaceCheckConstraint(
   ) > 0;
   if (exists) {
     await pool.query(
-      `ALTER TABLE \`${table}\` DROP CHECK \`${constraint}\``
+      `ALTER TABLE \`${table}\` DROP CONSTRAINT \`${constraint}\``
     );
   }
   await pool.query(
