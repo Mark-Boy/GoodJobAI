@@ -56,7 +56,7 @@ async function forward(req: Request, res: Response, token: string, raw = false) 
         req.method === "GET" || req.method === "HEAD"
           ? undefined
           : raw
-            ? (req.body as Buffer)
+            ? new Uint8Array(req.body as Buffer)
             : JSON.stringify(req.body ?? {}),
       signal: AbortSignal.timeout(raw ? 60000 : 15000)
     });
