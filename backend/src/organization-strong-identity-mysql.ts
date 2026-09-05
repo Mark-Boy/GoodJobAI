@@ -1725,7 +1725,7 @@ function normalizeCheckClause(clause: string) {
       normalized += character;
       continue;
     }
-    if (character === "`" || /\s/.test(character)) continue;
+    if (character === "`" || character === "(" || character === ")" || /\s/.test(character)) continue;
     normalized += character.toLowerCase();
   }
   return normalized;
