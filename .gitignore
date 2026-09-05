@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .env
 .env.*.local
 .data/
@@ -35,3 +36,7 @@ coverage/
 .DS_Store
 *.full.sql
 PLC/
+=======
+node_modules
+frontend/tsconfig.tsbuildinfo
+>>>>>>> github/master

@@ -130,7 +130,14 @@ import type { SalesDistillation, SalesPlaybookActivation, SalesTrainingRun } fro
 
 const defaultUrl = "mysql://goodjob:change_me@127.0.0.1:3306/goodjob_crm";
 
+<<<<<<< HEAD
 export type MysqlStoreProcessRole = "api" | "worker";
+=======
+export async function createMysqlStore(): Promise<CrmStore> {
+  const databaseUrl = process.env.DATABASE_URL || process.env.MYSQL_URL || defaultUrl;
+  const pool = mysql.createPool({ uri: databaseUrl, connectionLimit: 4, namedPlaceholders: true, timezone: "Z", dateStrings: ["DATETIME", "TIMESTAMP"] });
+  await ensureSchema(pool);
+>>>>>>> github/master
 
 async function acquireProductionInstanceLock(
   pool: mysql.Pool,
@@ -1861,6 +1868,7 @@ export async function createMysqlStore(
         close
   };
 
+<<<<<<< HEAD
   const seedDevelopmentData = ["test", "e2e"].includes(process.env.NODE_ENV || "")
     || process.env.CRM_SEED_DEVELOPMENT_DATA === "true";
   const existingProviderCodes = new Set(store.providerCatalog.map((item) => item.code));
@@ -2042,6 +2050,83 @@ export async function createMysqlStore(
   if (missingSeedUsers.length) {
     store.users.push(...missingSeedUsers);
     await store.persist();
+=======
+  // 种子版本控制：通过 seed_version 表确保种子数据只写入一次，避免每次启动重复全表 persist。
+  const [seedRows] = await pool.query("SELECT version FROM seed_version WHERE id = 1") as [any[], any];
+  const currentSeedVersion = "v1";
+  const alreadySeeded = seedRows.length > 0 && seedRows[0].version === currentSeedVersion;
+
+  if (!alreadySeeded) {
+    const isEmpty = !store.users.length && !store.customers.length;
+
+    if (isEmpty) {
+      // 初次启动（数据库为空）— 写入种子数据
+      if (process.env.NODE_ENV === "production") {
+        const email = process.env.INITIAL_ADMIN_EMAIL?.trim().toLowerCase();
+        const password = process.env.INITIAL_ADMIN_PASSWORD || "";
+        if (!email || password.length < 12) {
+          throw new Error("首次生产部署必须配置 INITIAL_ADMIN_EMAIL 和至少 12 位的 INITIAL_ADMIN_PASSWORD");
+        }
+        store.users.push({
+          id: "u_initial_super_admin",
+          name: process.env.INITIAL_ADMIN_NAME?.trim() || "Super Admin",
+          email,
+          password: await hashPassword(password),
+          role: "super_admin",
+          teamId: "all",
+          avatar: "SA",
+          status: "active",
+          authVersion: 1
+        });
+      } else {
+        // 开发环境：写入所有种子数据
+        store.users.push(...users);
+        store.customers.push(...customers);
+        store.customerActivities.push(...customerActivities);
+        store.leads.push(...leads);
+        store.leadActivities.push(...leadActivities);
+        store.leadSourceEvents.push(...leadSourceEvents);
+        store.todos.push(...todos);
+        store.deals.push(...deals);
+        store.dealEvents.push(...dealEvents);
+        store.reminders.push(...reminders);
+        store.knowledgeAssets.push(...knowledgeAssets);
+        store.exams.push(...exams);
+        store.examQuestions.push(...examQuestions);
+        store.examQuestionLinks.push(...examQuestionLinks);
+        store.examAttempts.push(...examAttempts);
+        store.importExportJobs.push(...importExportJobs);
+        store.tradeDocuments.push(...tradeDocuments);
+        store.wecomMessages.push(...wecomMessages);
+        store.ocrJobs.push(...ocrJobs);
+        store.websiteOpportunities.push(...websiteOpportunities);
+        store.aiModelConfigs.push(...aiModelConfigs);
+        store.leadSourceConfigs.push(...leadSourceConfigs);
+        store.planTasks.push(...planTasks);
+        store.planTemplates.push(...planTemplates);
+        store.problems.push(...problems);
+        store.memos.push(...memos);
+        store.competitors.push(...competitors);
+        store.caseStudies.push(...caseStudies);
+        store.commissionProducts.push(...commissionProducts);
+        store.commissionRules.push(...commissionRules);
+        store.monthlySalesRecords.push(...monthlySalesRecords);
+        store.salesRecordAudits.push(...salesRecordAudits);
+        store.commissionCalculations.push(...commissionCalculations);
+        store.commissionItems.push(...commissionItems);
+        store.commissionExports.push(...commissionExports);
+        store.whatsappBindings.push(...whatsappBindings);
+        store.whatsappMessages.push(...whatsappMessages);
+      }
+      await store.persist();
+    }
+
+    // 记录种子版本（无论是否为初次，只要版本缺失或过期就更新）
+    await pool.query(
+      "INSERT INTO seed_version (id, version, applied_at) VALUES (1, ?, NOW()) ON DUPLICATE KEY UPDATE version = VALUES(version), applied_at = NOW()",
+      [currentSeedVersion]
+    );
+>>>>>>> github/master
   }
   // 种子用户（含 super_admin）在 IAM 基础表初始化之后才入库；本次若新增了用户，补跑一次以生成 platform_operators 等行
   if (store.users.length > userCountBeforeSeed) {
@@ -2982,6 +3067,7 @@ async function ensureSchema(pool: mysql.Pool) {
     team_id VARCHAR(64) NOT NULL DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`);
+<<<<<<< HEAD
   await ensureColumn(pool, "ocr_jobs", "batch_id", "VARCHAR(64) NOT NULL DEFAULT ''");
   await ensureColumn(pool, "ocr_jobs", "source_file_name", "VARCHAR(255) NOT NULL DEFAULT ''");
   await ensureColumn(pool, "ocr_jobs", "error_message", "VARCHAR(1000) NOT NULL DEFAULT ''");
@@ -2996,6 +3082,10 @@ async function ensureSchema(pool: mysql.Pool) {
     SET jobs.team_id = users.team_id
     WHERE jobs.team_id = ''
   `);
+=======
+  await ensureColumn(pool, "ocr_jobs", "owner_id", "VARCHAR(64) NOT NULL DEFAULT ''");
+  await ensureColumn(pool, "ocr_jobs", "team_id", "VARCHAR(64) NOT NULL DEFAULT ''");
+>>>>>>> github/master
   await pool.query(`CREATE TABLE IF NOT EXISTS website_opportunities (
     id VARCHAR(64) PRIMARY KEY,
     company VARCHAR(200) NOT NULL,
@@ -5848,6 +5938,7 @@ async function ensureSchema(pool: mysql.Pool) {
     INDEX idx_whatsapp_messages_customer(customer_id),
     INDEX idx_whatsapp_messages_created(created_at)
   )`);
+<<<<<<< HEAD
 
   await pool.query(`CREATE TABLE IF NOT EXISTS daily_reports (
     id VARCHAR(64) PRIMARY KEY,
@@ -5903,6 +5994,14 @@ async function ensureSchema(pool: mysql.Pool) {
   )`);
   await ensureColumn(pool, "internal_messages", "idempotency_key", "VARCHAR(256) NULL");
   await ensureUniqueIndex(pool, "internal_messages", "uk_internal_messages_idempotency", ["recipient_id", "idempotency_key"]);
+=======
+  // 种子版本控制：确保一次初始化只执行一次，避免每次启动都按"某表为空"误判重播种子。
+  await pool.query(`CREATE TABLE IF NOT EXISTS seed_version (
+    id INT PRIMARY KEY DEFAULT 1,
+    version VARCHAR(32) NOT NULL,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`);
+>>>>>>> github/master
 }
 
 async function rows<T>(pool: MysqlQuerySource, sql: string): Promise<T[]> {
@@ -7128,6 +7227,7 @@ async function loadWecomMessages(pool: mysql.Pool): Promise<WecomMessage[]> {
   }));
 }
 
+<<<<<<< HEAD
 async function loadWecomCommandEndpoints(pool: mysql.Pool): Promise<WecomCommandEndpoint[]> {
   return (await rows<Record<string, any>>(pool, "SELECT * FROM wecom_command_endpoints ORDER BY updated_at DESC")).map((row) => ({
     id: row.id,
@@ -7141,6 +7241,16 @@ async function loadWecomCommandEndpoints(pool: mysql.Pool): Promise<WecomCommand
     status: row.endpoint_status === "disabled" ? "disabled" : "active",
     createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at || "",
     updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at || ""
+=======
+async function loadOcrJobs(pool: mysql.Pool): Promise<OcrJob[]> {
+  return (await rows<Record<string, string | number | null>>(pool, "SELECT * FROM ocr_jobs")).map((row): OcrJob => ({
+    id: String(row.id),
+    status: String(row.status) as OcrJob["status"],
+    confidence: Number(row.confidence || 0),
+    fields: (typeof row.fields_json === "string" ? JSON.parse(row.fields_json) : row.fields_json) as Record<string, string>,
+    ownerId: String(row.owner_id || row.created_by || ""),
+    teamId: String(row.team_id || "")
+>>>>>>> github/master
   }));
 }
 
@@ -11721,6 +11831,7 @@ async function loadWhatsAppMessages(pool: mysql.Pool): Promise<WhatsAppMessage[]
   }));
 }
 
+<<<<<<< HEAD
 async function loadDailyReports(pool: mysql.Pool): Promise<DailyReport[]> {
   return (await rows<Record<string, any>>(pool, "SELECT * FROM daily_reports ORDER BY report_date DESC, submitted_at DESC")).map((row) => ({
     id: row.id,
@@ -11961,6 +12072,83 @@ async function persistAll(pool: mysql.Pool, store: CrmStore) {
 	    await replaceRows(connection, "commission_exports", store.commissionExports, (item) => [item.id, item.month, item.scopeType, item.scopeOwnerId, item.fileType, item.rows, item.exportedBy, mysqlDate(item.createdAt)], "(id,month_value,scope_type,scope_owner_id,file_type,rows_count,exported_by,created_at)");
 	    await replaceRows(connection, "whatsapp_bindings", store.whatsappBindings, (item) => [item.id, item.customerId, item.phoneNumber, item.waProfileName || "", item.lastMessageAt ? mysqlDate(item.lastMessageAt) : null, item.unreadCount || 0, mysqlDate(item.createdAt), item.bindingMode || "manual", item.userId || "", item.sessionData || "", item.twilioPhoneNumber || "", item.connectionStatus || "disconnected", item.lastConnectedAt ? mysqlDate(item.lastConnectedAt) : null], "(id,customer_id,phone_number,wa_profile_name,last_message_at,unread_count,created_at,binding_mode,user_id,session_data,twilio_phone_number,connection_status,last_connected_at)");
 	    await replaceRows(connection, "whatsapp_messages", store.whatsappMessages, (item) => [item.id, item.customerId, item.direction, item.content || "", item.contentTranslated || "", item.mediaUrl || "", item.status || "", item.waMessageId || "", mysqlDate(item.createdAt)], "(id,customer_id,direction,content,content_translated,media_url,status,wa_message_id,created_at)");
+=======
+// 互斥锁：防止多个并发请求同时执行全量 persist，避免 MySQL 事务冲突与连接争抢
+let persistMutex: Promise<void> = Promise.resolve();
+function acquirePersistLock(): { wait: Promise<void>; release: () => void } {
+  let release: () => void;
+  const next = new Promise<void>((resolve) => { release = resolve; });
+  const prev = persistMutex;
+  persistMutex = prev.then(() => next);
+  return { wait: prev, release: release! };
+}
+
+// 单主键表增量 upsert：先删除「快照中不存在」的 DB 孤儿行，再用 INSERT ... ON DUPLICATE KEY UPDATE 插入/更新
+async function upsertRows<T>(connection: mysql.PoolConnection, table: string, items: T[], values: (item: T) => unknown[], columns: string, pkCol = "id") {
+  const ids = items.map((item) => (item as Record<string, unknown>)[pkCol]);
+  if (ids.length === 0) {
+    await connection.query(`DELETE FROM ${table}`);
+    return;
+  }
+  const idPlaceholders = ids.map(() => "?").join(",");
+  await connection.query(`DELETE FROM ${table} WHERE ${pkCol} NOT IN (${idPlaceholders})`, ids);
+  const mapped = items.map(values);
+  const rowPlaceholders = mapped.map((row) => `(${row.map(() => "?").join(",")})`).join(",");
+  const colNames = columns.replace(/[()]/g, "").split(",").map((c) => c.trim());
+  const updateCols = colNames.filter((c) => c !== pkCol);
+  if (updateCols.length) {
+    const updateClause = updateCols.map((c) => `${c}=VALUES(${c})`).join(",");
+    await connection.query(`INSERT INTO ${table} ${columns} VALUES ${rowPlaceholders} ON DUPLICATE KEY UPDATE ${updateClause}`, mapped.flat());
+  } else {
+    await connection.query(`INSERT IGNORE INTO ${table} ${columns} VALUES ${rowPlaceholders}`, mapped.flat());
+  }
+}
+
+async function persistAll(pool: mysql.Pool, store: CrmStore) {
+  const lock = acquirePersistLock();
+  await lock.wait;
+  try {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    await upsertRows(connection, "users", store.users, (item) => [item.id, item.name, item.email, item.password, item.role, item.teamId, item.avatar, item.status, item.authVersion || 1, item.outboundEmail || "", item.emailSenderName ?? "", item.emailSignature || "", item.smtpHost || "", item.smtpPort || 465, item.smtpSecure ?? true, item.smtpUser || "", item.smtpPassword || "", item.lastDevelopmentEmailAt ? mysqlDate(item.lastDevelopmentEmailAt) : null, item.lastDevelopmentEmailTo || "", item.lastDevelopmentEmailSubject || ""], "(id,name,email,password_hash,role,team_id,avatar,status,auth_version,outbound_email,email_sender_name,email_signature,smtp_host,smtp_port,smtp_secure,smtp_user,smtp_password,last_development_email_at,last_development_email_to,last_development_email_subject)");
+    await upsertRows(connection, "customers", store.customers, (item) => [item.id, item.company, item.country, item.contact, item.ownerId, item.teamId, item.stage, item.amount, item.health, item.nextReminder, item.wecomBound, item.billingName || "", item.billingAddress || "", item.documentContact || "", item.defaultPortDischarge || "", item.defaultIncoterm || "", item.defaultPaymentTerm || ""], "(id,company,country,contact,owner_id,team_id,stage,amount,health,next_reminder,wecom_bound,billing_name,billing_address,document_contact,default_port_discharge,default_incoterm,default_payment_term)");
+    await upsertRows(connection, "customer_activities", store.customerActivities, (item) => [item.id, item.customerId, item.type || "note", item.content || "", item.operatorId || "", item.nextReminder || "", mysqlDate(item.createdAt)], "(id,customer_id,type,content,operator_id,next_reminder,created_at)");
+    await upsertRows(connection, "leads", store.leads, (item) => [item.id, item.company, item.contact || "", item.country || "", item.email || "", item.phone || "", item.wechat || "", item.source || "", item.sourceType || "outbound", item.sourceChannel || "manual", item.sourceCampaign || "", item.externalId || "", item.sourceUrl || "", item.intent || "中", item.stage || "新线索", item.status || "new", item.ownerId, item.teamId, item.estimatedAmount || 0, item.nextFollowAt || "", item.lastActivityAt || "", item.remark || "", item.convertedCustomerId || "", item.convertedDealId || "", item.deletedAt ? mysqlDate(item.deletedAt) : null, item.deletedReason || "", item.deletedBy || "", item.purgeAt ? mysqlDate(item.purgeAt) : null, item.statusBeforeDelete || "", mysqlDate(item.createdAt)], "(id,company,contact,country,email,phone,wechat,source,source_type,source_channel,source_campaign,external_id,source_url,intent,stage,status,owner_id,team_id,estimated_amount,next_follow_at,last_activity_at,remark,converted_customer_id,converted_deal_id,deleted_at,deleted_reason,deleted_by,purge_at,status_before_delete,created_at)");
+    await upsertRows(connection, "lead_activities", store.leadActivities, (item) => [item.id, item.leadId, item.type || "note", item.content || "", item.operatorId || "", item.nextFollowAt || "", mysqlDate(item.createdAt)], "(id,lead_id,type,content,operator_id,next_follow_at,created_at)");
+    await upsertRows(connection, "lead_source_events", store.leadSourceEvents, (item) => [item.id, item.leadId, item.sourceType, item.channel, item.campaign || "", item.externalId || "", item.sourceUrl || "", mysqlDate(item.occurredAt), mysqlDate(item.receivedAt), item.rawPayload || "{}", item.ownerId, item.teamId], "(id,lead_id,source_type,channel,campaign,external_id,source_url,occurred_at,received_at,raw_payload,owner_id,team_id)");
+    await upsertRows(connection, "deals", store.deals, (item) => [item.id, item.customerId, item.title, item.stage, item.product || "", item.quantity || 0, item.unitPrice || 0, item.amount, item.currency || "USD", item.amountType || "estimate", item.ownerId, item.teamId, item.nextAction, item.nextActionAt || "", item.expectedCloseAt || "", mysqlDate(item.stageChangedAt), item.closedAt ? mysqlDate(item.closedAt) : null, item.wonReason || "", item.lostReason || "", item.lostReasonCategory || "", item.revisitAt || "", item.archivedAt ? mysqlDate(item.archivedAt) : null], "(id,customer_id,title,stage,product,quantity,unit_price,amount,currency,amount_type,owner_id,team_id,next_action,next_action_at,expected_close_at,stage_changed_at,closed_at,won_reason,lost_reason,lost_reason_category,revisit_at,archived_at)");
+    await upsertRows(connection, "deal_events", store.dealEvents, (item) => [item.id, item.dealId, item.type, item.content || "", item.operatorId, item.fromStage || "", item.toStage || "", item.nextAction || "", item.nextActionAt || "", item.relatedDocumentId || "", mysqlDate(item.createdAt)], "(id,deal_id,event_type,content,operator_id,from_stage,to_stage,next_action,next_action_at,related_document_id,created_at)");
+    await upsertRows(connection, "todos", (store.todos as Todo[]), (item) => [item.id, item.title, item.type, item.priority, item.dueAt, item.ownerId, item.teamId, item.related, item.done, item.status || "pending", item.pinState || "", item.sortOrder || 0, item.impactAmount ?? null, mysqlDate(item.createdAt), item.historyAt ? mysqlDate(item.historyAt) : null, item.customerId || "", item.dealId || "", item.reminderRuleId || "", item.triggerKey || "", item.snoozedFrom || "", item.snoozeReason || "", item.snoozeCount || 0, item.snoozedBy || "", item.completedAt ? mysqlDate(item.completedAt) : null, item.completedBy || "", item.completionResult || ""], "(id,title,type,priority,due_at,owner_id,team_id,related,done,status,pin_state,sort_order,impact_amount,created_at,history_at,customer_id,deal_id,reminder_rule_id,trigger_key,snoozed_from,snooze_reason,snooze_count,snoozed_by,completed_at,completed_by,completion_result)");
+    await upsertRows(connection, "plan_tasks", store.planTasks, (item) => [item.id, item.title, item.phase, item.category, item.priority, item.status, item.dueAt, item.target, item.description, item.customerId || "", item.leadId || "", item.dealId || "", item.completionResult || "", item.completedAt ? mysqlDate(item.completedAt) : null, item.cancellationReason || "", item.cancelledAt ? mysqlDate(item.cancelledAt) : null, item.rescheduledFrom || "", item.rescheduledAt ? mysqlDate(item.rescheduledAt) : null, item.rescheduleReason || "", item.ownerId, item.teamId, mysqlDate(item.createdAt), mysqlDate(item.updatedAt)], "(id,title,phase,category,priority,status,due_at,target,description,customer_id,lead_id,deal_id,completion_result,completed_at,cancellation_reason,cancelled_at,rescheduled_from,rescheduled_at,reschedule_reason,owner_id,team_id,created_at,updated_at)");
+    await upsertRows(connection, "plan_templates", store.planTemplates, (item) => [item.id, item.section, item.title, item.summary, item.output, item.badge, item.badgeTone, item.phase, item.category, item.priority, item.target, item.description, item.sortOrder, item.ownerId, item.teamId, mysqlDate(item.updatedAt)], "(id,section_name,title,summary,output_text,badge,badge_tone,phase,category,priority,target,description,sort_order,owner_id,team_id,updated_at)");
+    await upsertRows(connection, "reminders", store.reminders, (item) => [item.id, item.title, item.rule, item.dueAt, item.ownerId, item.teamId, "站内", item.enabled === false ? "disabled" : "enabled", item.ruleType || null, item.targetStage || null, item.days ?? 3, item.priority || "normal", item.enabled ?? true, item.generatedCount || 0, item.targetOwnerId || item.ownerId, item.lastRunBy || "", item.lastRunAt ? mysqlDate(item.lastRunAt) : null, item.lastMatchedCount || 0, item.lastCreatedCount || 0, item.lastSkippedCount || 0, item.lastFailedCount || 0, item.lastError || ""], "(id,title,rule_text,due_at,owner_id,team_id,channel,status,rule_type,target_stage,days_count,priority,enabled,generated_count,target_owner_id,last_run_by,last_run_at,last_matched_count,last_created_count,last_skipped_count,last_failed_count,last_error)");
+    await upsertRows(connection, "knowledge_assets", store.knowledgeAssets, (item) => [item.id, item.title, item.category, item.status, item.ownerId, item.version], "(id,title,category,status,owner_id,version)");
+    await upsertRows(connection, "exams", store.exams, (item) => [item.id, item.title, item.category, item.status, item.passRate, item.questionCount, item.durationMinutes || 20, item.passScore || 80, item.targetRole || "sales", mysqlDate(item.updatedAt)], "(id,title,category,status,pass_rate,question_count,duration_minutes,pass_score,target_role,updated_at)");
+    await upsertRows(connection, "exam_questions", store.examQuestions, (item) => [item.id, item.examId || "bank", item.category, item.stem, JSON.stringify(item.options), item.answerIndex, JSON.stringify(item.answerIndexes?.length ? item.answerIndexes : [item.answerIndex]), item.questionType || ((item.answerIndexes?.length || 0) > 1 ? "multiple" : "single"), JSON.stringify(item.tags || []), item.explanation, item.difficulty, mysqlDate(item.updatedAt)], "(id,exam_id,category,stem,options_json,answer_index,answer_indexes_json,question_type,tags_json,explanation,difficulty,updated_at)");
+    await replaceAllRows(connection, "exam_question_links", store.examQuestionLinks, (item) => [item.examId, item.questionId, item.sortOrder], "(exam_id,question_id,sort_order)");
+    await upsertRows(connection, "exam_attempts", store.examAttempts, (item) => [item.id, item.examId, item.userId, item.score, item.passed, JSON.stringify(item.answers), item.correctCount, item.totalQuestions, mysqlDate(item.submittedAt)], "(id,exam_id,user_id,score,passed,answers_json,correct_count,total_questions,submitted_at)");
+    await upsertRows(connection, "import_export_jobs", store.importExportJobs, (item) => [item.id, item.name, item.type, item.rows, item.status, item.operatorId, item.createdAt], "(id,name,type,rows_count,status,operator_id,created_at)");
+    await upsertRows(connection, "trade_documents", store.tradeDocuments, (item) => [item.id, item.customerId || "", item.dealId || "", item.revision || 1, item.type, item.title, item.number, item.issueDate, item.buyer, item.buyerAddress, item.buyerContact, item.seller, item.sellerAddress, item.currency, item.incoterm, item.paymentTerm, item.shippingMethod, item.portLoading, item.portDischarge, item.validityDate, item.bankInfo, item.notes, item.templateStyle, item.status, item.approvalNote || "", item.approvedAt || null, item.approvedBy || "", JSON.stringify(item.audits || []), JSON.stringify(item.sendRecords || []), item.ownerId, item.teamId, JSON.stringify(item.items), mysqlDate(item.updatedAt)], "(id,customer_id,deal_id,revision,doc_type,title,doc_number,issue_date,buyer,buyer_address,buyer_contact,seller,seller_address,currency,incoterm,payment_term,shipping_method,port_loading,port_discharge,validity_date,bank_info,notes,template_style,status,approval_note,approved_at,approved_by,audits_json,send_records_json,owner_id,team_id,items_json,updated_at)");
+	    await upsertRows(connection, "wecom_messages", store.wecomMessages, (item) => [item.id, item.customerId, item.summary, item.ownerId, item.teamId, item.status], "(id,customer_id,summary,owner_id,team_id,status)");
+	    await upsertRows(connection, "ocr_jobs", store.ocrJobs, (item) => [item.id, item.status, item.confidence, JSON.stringify(item.fields), item.ownerId, item.ownerId, item.teamId], "(id,status,confidence,fields_json,created_by,owner_id,team_id)");
+	    await upsertRows(connection, "website_opportunities", store.websiteOpportunities, (item) => [item.id, item.company, item.business, item.country, item.website, item.contact, item.contactInfo, item.description, item.ownerId, item.teamId, item.status, item.customerId || null, item.dealId || null, item.leadId || null, item.parseMode || "rule", item.source || "", item.sourceLabel || "", item.confidence ?? null, item.lastDevelopmentEmailAt ? mysqlDate(item.lastDevelopmentEmailAt) : null, item.lastDevelopmentEmailSubject || "", item.lastDevelopmentEmailTo || "", item.verifiedAt ? mysqlDate(item.verifiedAt) : null, item.statusChangedAt ? mysqlDate(item.statusChangedAt) : null, item.excludedReason || "", mysqlDate(item.createdAt)], "(id,company,business,country,website,contact,contact_info,description,owner_id,team_id,status,customer_id,deal_id,lead_id,parse_mode,source,source_label,confidence,last_development_email_at,last_development_email_subject,last_development_email_to,verified_at,status_changed_at,excluded_reason,created_at)");
+	    await upsertRows(connection, "ai_model_configs", store.aiModelConfigs, (item) => [item.id, item.provider, item.protocol || "openai-compatible", item.name, item.baseUrl, item.model, item.apiKey, item.enabled, item.temperature ?? 0.1, item.useLeadFinder ?? true, item.useWebsiteParse ?? true, item.useScoring ?? true, item.useEmailDraft ?? true, item.useExam ?? false, item.lastTestAt ? mysqlDate(item.lastTestAt) : null, item.lastTestStatus || "untested", item.lastTestMessage || "", item.ownerId, item.teamId, mysqlDate(item.updatedAt)], "(id,provider,protocol,name,base_url,model,api_key,enabled,temperature,use_lead_finder,use_website_parse,use_scoring,use_email_draft,use_exam,last_test_at,last_test_status,last_test_message,owner_id,team_id,updated_at)");
+	    await upsertRows(connection, "lead_source_configs", store.leadSourceConfigs, (item) => [item.id, item.provider, item.scope || "personal", item.apiKey, item.baseUrl || "", item.enabled, item.lastTestAt ? mysqlDate(item.lastTestAt) : null, item.lastTestStatus || "untested", item.lastTestMessage || "", item.usageJson || "", item.ownerId, item.teamId, mysqlDate(item.updatedAt)], "(id,provider,scope,api_key,base_url,enabled,last_test_at,last_test_status,last_test_message,usage_json,owner_id,team_id,updated_at)");
+	    await upsertRows(connection, "problems", store.problems, (item) => [item.id, item.title, item.category, item.severity, item.status, item.ownerId, item.teamId, item.relatedCustomer, item.rootCause, item.solution, item.nextAction, item.dueAt, mysqlDate(item.createdAt)], "(id,title,category,severity,status,owner_id,team_id,related_customer,root_cause,solution,next_action,due_at,created_at)");
+	    await upsertRows(connection, "memos", store.memos, (item) => [item.id, item.title, item.content, item.category, item.tags, item.customerId || "", item.dealId || "", item.ownerId, item.teamId, item.pinned, item.archived, item.deletedAt ? mysqlDate(item.deletedAt) : null, mysqlDate(item.updatedAt)], "(id,title,content,category,tags,customer_id,deal_id,owner_id,team_id,pinned,archived,deleted_at,updated_at)");
+	    await upsertRows(connection, "competitors", store.competitors, (item) => [item.id, item.company, item.country, item.segment, item.threatLevel, item.website, item.strengths, item.weaknesses, item.competingProducts, item.ourStrategy, item.ownerId, item.teamId, mysqlDate(item.updatedAt)], "(id,company,country,segment,threat_level,website,strengths,weaknesses,competing_products,our_strategy,owner_id,team_id,updated_at)");
+	    await upsertRows(connection, "case_studies", store.caseStudies, (item) => [item.id, item.title, item.customer, item.country, item.product, item.industry, item.result, item.story, item.reusablePoints, item.status, item.ownerId, item.teamId, mysqlDate(item.updatedAt)], "(id,title,customer,country,product,industry,result_text,story,reusable_points,status,owner_id,team_id,updated_at)");
+	    await upsertRows(connection, "commission_products", store.commissionProducts, (item) => [item.id, item.name, item.category, item.model, item.currency, item.defaultPrice, item.costPrice, item.status, item.remark, item.ownerId, item.teamId, mysqlDate(item.updatedAt)], "(id,name,category,model,currency,default_price,cost_price,status,remark,owner_id,team_id,updated_at)");
+	    await upsertRows(connection, "commission_rules", store.commissionRules, (item) => [item.id, item.productId, item.ruleType, item.rate, item.fixedAmount, item.tierJson, item.grossProfitRate, item.effectiveFrom, item.effectiveTo, item.enabled, item.remark, item.createdBy, mysqlDate(item.createdAt)], "(id,product_id,rule_type,rate,fixed_amount,tier_json,gross_profit_rate,effective_from,effective_to,enabled,remark,created_by,created_at)");
+	    await upsertRows(connection, "monthly_sales_records", store.monthlySalesRecords, (item) => [item.id, item.month, item.ownerId, item.teamId, item.customerId, item.customerName, item.dealId, item.productId, item.productName, item.quantity, item.unitPrice, item.salesAmount, item.currency, item.exchangeRate, item.exchangeRateDate, item.exchangeRateSource, item.settlementCurrency, item.settlementAmount, item.basisType, item.basisDate, item.dealArchivedAt, item.sourceType, item.status, item.edited, item.editNote, item.lastEditedBy, item.lastEditedAt ? mysqlDate(item.lastEditedAt) : null, mysqlDate(item.createdAt), mysqlDate(item.updatedAt)], "(id,month_value,owner_id,team_id,customer_id,customer_name,deal_id,product_id,product_name,quantity,unit_price,sales_amount,currency,exchange_rate,exchange_rate_date,exchange_rate_source,settlement_currency,settlement_amount,basis_type,basis_date,deal_archived_at,source_type,status,edited,edit_note,last_edited_by,last_edited_at,created_at,updated_at)");
+	    await upsertRows(connection, "sales_record_audits", store.salesRecordAudits, (item) => [item.id, item.recordId, item.fieldName, item.oldValue, item.newValue, item.reason, item.operatorId, item.operatorName, mysqlDate(item.createdAt)], "(id,record_id,field_name,old_value,new_value,reason,operator_id,operator_name,created_at)");
+	    await upsertRows(connection, "commission_calculations", store.commissionCalculations, (item) => [item.id, item.month, item.ownerId, item.teamId, item.salesAmount, item.autoCommission, item.manualAdjustment, item.finalCommission, item.status, item.version, item.isCurrent, item.calculatedAt ? mysqlDate(item.calculatedAt) : null, item.reviewedBy, item.reviewedAt ? mysqlDate(item.reviewedAt) : null, item.lockedBy, item.lockedAt ? mysqlDate(item.lockedAt) : null, item.unlockReason], "(id,month_value,owner_id,team_id,sales_amount,auto_commission,manual_adjustment,final_commission,status,version_no,is_current,calculated_at,reviewed_by,reviewed_at,locked_by,locked_at,unlock_reason)");
+	    await upsertRows(connection, "commission_items", store.commissionItems, (item) => [item.id, item.calculationId, item.recordId, item.productId, item.itemType, item.sourceType, item.ruleSnapshotJson, item.salesAmount, item.autoAmount, item.manualAmount, item.finalAmount, item.remark, item.createdBy, mysqlDate(item.createdAt)], "(id,calculation_id,record_id,product_id,item_type,source_type,rule_snapshot_json,sales_amount,auto_amount,manual_amount,final_amount,remark,created_by,created_at)");
+	    await upsertRows(connection, "commission_exports", store.commissionExports, (item) => [item.id, item.month, item.scopeType, item.scopeOwnerId, item.fileType, item.rows, item.exportedBy, mysqlDate(item.createdAt)], "(id,month_value,scope_type,scope_owner_id,file_type,rows_count,exported_by,created_at)");
+	    await upsertRows(connection, "whatsapp_bindings", store.whatsappBindings, (item) => [item.id, item.customerId, item.phoneNumber, item.waProfileName || "", item.lastMessageAt ? mysqlDate(item.lastMessageAt) : null, item.unreadCount || 0, mysqlDate(item.createdAt), item.bindingMode || "manual", item.userId || "", item.sessionData || "", item.twilioPhoneNumber || "", item.connectionStatus || "disconnected", item.lastConnectedAt ? mysqlDate(item.lastConnectedAt) : null], "(id,customer_id,phone_number,wa_profile_name,last_message_at,unread_count,created_at,binding_mode,user_id,session_data,twilio_phone_number,connection_status,last_connected_at)");
+	    await upsertRows(connection, "whatsapp_messages", store.whatsappMessages, (item) => [item.id, item.customerId, item.direction, item.content || "", item.contentTranslated || "", item.mediaUrl || "", item.status || "", item.waMessageId || "", mysqlDate(item.createdAt)], "(id,customer_id,direction,content,content_translated,media_url,status,wa_message_id,created_at)");
+>>>>>>> github/master
 	    await connection.commit();
   } catch (error) {
     await connection.rollback();
@@ -11968,9 +12156,12 @@ async function persistAll(pool: mysql.Pool, store: CrmStore) {
   } finally {
     connection.release();
   }
+  } finally {
+    lock.release();
+  }
 }
 
-async function replaceRows<T>(connection: mysql.PoolConnection, table: string, items: T[], values: (item: T) => unknown[], columns: string) {
+async function replaceAllRows<T>(connection: mysql.PoolConnection, table: string, items: T[], values: (item: T) => unknown[], columns: string) {
   await connection.query(`DELETE FROM ${table}`);
   if (!items.length) return;
   const mapped = items.map(values);
@@ -11978,6 +12169,7 @@ async function replaceRows<T>(connection: mysql.PoolConnection, table: string, i
   await connection.query(`INSERT INTO ${table} ${columns} VALUES ${placeholders}`, mapped.flat());
 }
 
+<<<<<<< HEAD
 async function upsertRows<T>(connection: mysql.PoolConnection, table: string, items: T[], values: (item: T) => unknown[], columns: string) {
   if (!items.length) return;
   const names = columns.slice(1, -1).split(",");
@@ -14776,8 +14968,16 @@ async function appendMarketOpportunityRows(
 }
 
 function mysqlDate(value?: string) {
+=======
+function mysqlDate(value?: string): string {
+>>>>>>> github/master
   const date = value ? new Date(value) : new Date();
-  return Number.isFinite(date.getTime()) ? date : new Date();
+  // 统一输出 UTC 'YYYY-MM-DD HH:MM:SS' 字符串字面值，避免 mysql2 在 Date 实例上按 local 时区序列化造成跨时区偏移。
+  // 与 createPool() 中的 timezone: 'Z' + dateStrings:['DATETIME','TIMESTAMP'] 配合，可保证写入/读取一致。
+  if (!Number.isFinite(date.getTime())) {
+    return new Date().toISOString().slice(0, 19).replace("T", " ");
+  }
+  return date.toISOString().slice(0, 19).replace("T", " ");
 }
 
 function migrateLegacyLeadSourceConfigs(store: CrmStore) {
