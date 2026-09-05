@@ -3741,30 +3741,15 @@ async function ensureSchema(pool: mysql.Pool) {
     cancelled_at DATETIME(3) NULL,
     active_team_id VARCHAR(64)
       GENERATED ALWAYS AS (
-        CASE
-          WHEN status IN (
-            'queued','running','pause_requested','paused','cancel_requested'
-          ) THEN team_id
-          ELSE NULL
-        END
+        IF(status IN ('queued','running','pause_requested','paused','cancel_requested'), team_id, NULL)
       ) STORED,
     active_owner_id VARCHAR(64)
       GENERATED ALWAYS AS (
-        CASE
-          WHEN status IN (
-            'queued','running','pause_requested','paused','cancel_requested'
-          ) THEN owner_id
-          ELSE NULL
-        END
+        IF(status IN ('queued','running','pause_requested','paused','cancel_requested'), owner_id, NULL)
       ) STORED,
     active_query_fingerprint CHAR(64)
       GENERATED ALWAYS AS (
-        CASE
-          WHEN status IN (
-            'queued','running','pause_requested','paused','cancel_requested'
-          ) THEN query_fingerprint
-          ELSE NULL
-        END
+        IF(status IN ('queued','running','pause_requested','paused','cancel_requested'), query_fingerprint, NULL)
       ) STORED,
     UNIQUE KEY uk_prospect_run_team_id(team_id, id),
     UNIQUE KEY uk_prospect_run_idempotency(
@@ -3842,30 +3827,15 @@ async function ensureSchema(pool: mysql.Pool) {
   await pool.query(`ALTER TABLE prospect_search_runs
     MODIFY COLUMN active_team_id VARCHAR(64)
       GENERATED ALWAYS AS (
-        CASE
-          WHEN status IN (
-            'queued','running','pause_requested','paused','cancel_requested'
-          ) THEN team_id
-          ELSE NULL
-        END
+        IF(status IN ('queued','running','pause_requested','paused','cancel_requested'), team_id, NULL)
       ) STORED,
     MODIFY COLUMN active_owner_id VARCHAR(64)
       GENERATED ALWAYS AS (
-        CASE
-          WHEN status IN (
-            'queued','running','pause_requested','paused','cancel_requested'
-          ) THEN owner_id
-          ELSE NULL
-        END
+        IF(status IN ('queued','running','pause_requested','paused','cancel_requested'), owner_id, NULL)
       ) STORED,
     MODIFY COLUMN active_query_fingerprint CHAR(64)
       GENERATED ALWAYS AS (
-        CASE
-          WHEN status IN (
-            'queued','running','pause_requested','paused','cancel_requested'
-          ) THEN query_fingerprint
-          ELSE NULL
-        END
+        IF(status IN ('queued','running','pause_requested','paused','cancel_requested'), query_fingerprint, NULL)
       ) STORED`);
   await ensureCheckConstraint(
     pool,
@@ -4783,11 +4753,11 @@ async function ensureSchema(pool: mysql.Pool) {
     version_no BIGINT NOT NULL,
     active_job_id VARCHAR(80)
       GENERATED ALWAYS AS (
-        CASE WHEN status = 'active' THEN job_id ELSE NULL END
+        IF(status = 'active', job_id, NULL)
       ) STORED,
     active_run_id VARCHAR(80)
       GENERATED ALWAYS AS (
-        CASE WHEN status = 'active' THEN run_id ELSE NULL END
+        IF(status = 'active', run_id, NULL)
       ) STORED,
     UNIQUE KEY uk_prospect_execution_lease_id(team_id, id),
     UNIQUE KEY uk_prospect_execution_active_job(team_id, active_job_id),
