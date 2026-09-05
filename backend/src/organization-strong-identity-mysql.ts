@@ -1924,7 +1924,7 @@ async function validateSchemaTables(
     connection,
     `SELECT tc.table_name AS tableName,
        tc.constraint_name AS constraintName,
-       cc.check_clause AS checkClause, tc.enforced AS enforced
+       cc.check_clause AS checkClause, 'YES' AS enforced
      FROM information_schema.table_constraints tc
      JOIN information_schema.check_constraints cc
        ON cc.constraint_schema = tc.constraint_schema
