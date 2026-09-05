@@ -1703,6 +1703,15 @@ type SchemaManifestEntry = readonly [
   manifest: TableSchemaManifest
 ];
 
+function normalizeColumnType(type: string) {
+  // MariaDB 整数列带显示宽度 int(11), MySQL 8 不带, 统一去掉
+  return type
+    .toLowerCase()
+    .replace(/\b(tinyint|smallint|mediumint|int|bigint)\(\d+\)/g, (match) =>
+      match.split("(")[0]!
+    );
+}
+
 function normalizeCheckClause(clause: string) {
   const source = clause
     .replaceAll("\\'", "'")
@@ -1794,7 +1803,7 @@ async function validateSchemaTables(
       if (!row
         || Number(row.ordinalPosition) !== index + 1
         || row.columnName !== columnName
-        || row.columnType.toLowerCase() !== columnType
+        || normalizeColumnType(row.columnType) !== columnType
         || row.isNullable !== "NO"
         || row.columnDefault !== null
         || row.columnExtra !== "") {
