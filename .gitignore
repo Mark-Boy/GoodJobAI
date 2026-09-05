@@ -34,3 +34,4 @@ coverage/
 # OS metadata and full database exports
 .DS_Store
 *.full.sql
+PLC/

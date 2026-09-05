@@ -1,10 +1,12 @@
 import { lookup } from "node:dns/promises";
+import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { isIP } from "node:net";
 import type { ProviderHttpClient, ProviderNetworkPolicy } from "./provider-contract.js";
 import { ProviderContractError } from "./provider-contract.js";
 import {
   isForbiddenNetworkHostname,
+  isLocalHttpUrl,
   isPrivateNetworkAddress,
   normalizeNetworkHostname
 } from "./provider-network-security.js";
@@ -64,6 +66,15 @@ async function resolveAllowedAddress(hostname: string) {
   return allowed[0];
 }
 
+// 本地模型服务：直接解析地址，允许回环/内网 IP
+async function resolveLocalAddress(hostname: string) {
+  const normalized = normalizeNetworkHostname(hostname);
+  if (isIP(normalized)) return { address: normalized, family: isIP(normalized) };
+  const addresses = await lookup(normalized, { all: true, verbatim: true });
+  if (!addresses.length) throw policyError("数据源地址未通过公网安全检查");
+  return addresses[0];
+}
+
 export async function resolveProviderPublicAddresses(hostname: string) {
   const normalizedHostname = normalizeNetworkHostname(hostname);
   if (providerHttpTestTransport && process.env.NODE_ENV === "test") {
@@ -89,11 +100,13 @@ function validateTarget(rawUrl: string, policy: ProviderNetworkPolicy, redirect 
   } catch {
     throw policyError("数据源地址格式无效");
   }
-  if (url.protocol !== "https:" || url.username || url.password || (url.port && url.port !== "443")) {
+  const localHttp = policy.allowLocalHttp && isLocalHttpUrl(url);
+  if (url.username || url.password
+    || (!localHttp && (url.protocol !== "https:" || (url.port && url.port !== "443")))) {
     throw policyError("数据源只允许使用不含账号密码的 HTTPS 标准端口");
   }
   const hostname = normalizeNetworkHostname(url.hostname);
-  if (isForbiddenNetworkHostname(hostname)) {
+  if (!localHttp && isForbiddenNetworkHostname(hostname)) {
     throw policyError("数据源目标未通过公网安全检查");
   }
   const allowedHosts = redirect
@@ -231,6 +244,7 @@ async function requestOnce(
   let body: Buffer | null;
   let headers: Headers;
   let address: Awaited<ReturnType<typeof resolveAllowedAddress>> | undefined;
+  const localHttp = policy.allowLocalHttp && isLocalHttpUrl(url);
   try {
     method = String(init.method || "GET").toUpperCase();
     if (!policy.allowedMethods.includes(method as "GET" | "HEAD" | "POST")) {
@@ -244,7 +258,10 @@ async function requestOnce(
     headers.set("accept-encoding", "identity");
     if (body) headers.set("content-length", String(body.length));
     if (!providerHttpTestTransport) {
-      address = await withinDeadline(resolveAllowedAddress(url.hostname), remainingDeadlineMs(deadlineAt));
+      address = await withinDeadline(
+        localHttp ? resolveLocalAddress(url.hostname) : resolveAllowedAddress(url.hostname),
+        remainingDeadlineMs(deadlineAt)
+      );
     }
   } catch (error) {
     recordResult({ httpStatus: 0, responseSize: 0, errorCode: errorCode(error) });
@@ -309,13 +326,13 @@ async function requestOnce(
       reject(error);
     };
     const requestHostname = normalizeNetworkHostname(url.hostname);
-    const request = httpsRequest({
-      protocol: "https:",
+    const request = (localHttp ? httpRequest : httpsRequest)({
+      protocol: localHttp ? "http:" : "https:",
       hostname: requestHostname,
-      port: 443,
+      port: localHttp ? (Number(url.port) || 80) : 443,
       method,
       path: `${url.pathname}${url.search}`,
-      servername: isIP(requestHostname) ? undefined : requestHostname,
+      servername: localHttp ? undefined : (isIP(requestHostname) ? undefined : requestHostname),
       headers: Object.fromEntries(headers.entries()),
       lookup(_hostname, options, callback) {
         const resolved = address!;
@@ -462,11 +479,13 @@ export function assertProviderBaseUrlAllowed(rawUrl: string, policy: ProviderNet
   } catch {
     throw policyError("数据源地址格式无效");
   }
-  if (url.protocol !== "https:" || url.username || url.password || (url.port && url.port !== "443")) {
+  const localHttp = policy.allowLocalHttp && isLocalHttpUrl(url);
+  if (url.username || url.password
+    || (!localHttp && (url.protocol !== "https:" || (url.port && url.port !== "443")))) {
     throw policyError("数据源只允许使用不含账号密码的 HTTPS 标准端口");
   }
   const hostname = normalizeNetworkHostname(url.hostname);
-  if (isForbiddenNetworkHostname(hostname)) {
+  if (!localHttp && isForbiddenNetworkHostname(hostname)) {
     throw policyError("数据源目标未通过公网安全检查");
   }
   if (!policy.allowedHosts.map(normalizeNetworkHostname).includes(hostname)) {

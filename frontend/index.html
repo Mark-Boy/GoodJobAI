@@ -23758,6 +23758,7 @@ body.platform-mode .workspace-tabs { display:none !important; }
             <button class="nav-secondary-button" data-view="products" title="产品维护"><span>产品维护</span></button>
             <button class="nav-secondary-button" data-view="leaderboard" title="排行"><span>排行</span></button>
             <button class="nav-secondary-button" data-view="agent-skills" title="Agent Skills"><span>Agent Skills</span></button>
+            <button class="nav-secondary-button" data-view="independent-site" title="独立站管理"><span>独立站管理</span></button>
           </div>
         </details>
 
@@ -25439,7 +25440,7 @@ body.platform-mode .workspace-tabs { display:none !important; }
                 <div class="inline-alert" id="aiConfigModeAlert" style="margin-bottom:12px"><b>编辑配置</b></div>
                 <div class="ai-form-grid">
                   <div class="form-field"><label>配置名称</label><input id="gptConfigName" value="" placeholder="例如：搜客专用 Key"></div>
-                  <div class="form-field"><label>供应商</label><select id="gptProviderSelect"><option value="openai">OpenAI</option><option value="anthropic">Anthropic Claude</option><option value="gemini">Google Gemini</option><option value="deepseek">DeepSeek</option><option value="qwen">通义千问 DashScope</option><option value="moonshot">Moonshot Kimi</option><option value="zhipu">智谱 GLM</option><option value="siliconflow">硅基流动 SiliconFlow</option><option value="baidu">百度千帆</option><option value="volcengine">火山豆包</option><option value="mistral">Mistral</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="ollama">Ollama / 本地</option><option value="custom">自定义兼容接口</option></select></div>
+                  <div class="form-field"><label>供应商</label><select id="gptProviderSelect"><option value="openai">OpenAI</option><option value="anthropic">Anthropic Claude</option><option value="gemini">Google Gemini</option><option value="deepseek">DeepSeek</option><option value="qwen">通义千问 DashScope</option><option value="moonshot">Moonshot Kimi</option><option value="zhipu">智谱 GLM</option><option value="siliconflow">硅基流动 SiliconFlow</option><option value="baidu">百度千帆</option><option value="volcengine">火山豆包</option><option value="mistral">Mistral</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="ollama">Ollama / 本地</option><option value="llamacpp">llama.cpp / 本地</option><option value="custom">自定义兼容接口</option></select></div>
                   <div class="form-field"><label>协议</label><select id="gptProtocolSelect"><option value="openai-compatible">OpenAI兼容</option><option value="anthropic">Claude Messages</option><option value="gemini">Gemini生成</option></select></div>
                   <div class="form-field"><label>模型名称</label><input id="gptModelInput" value="" placeholder="例如 gpt-4o-mini / deepseek-chat"></div>
                   <div class="form-field full"><label>Base URL</label><input id="gptBaseUrlInput" value="" placeholder="例如 https://api.openai.com/v1"></div>
@@ -28146,6 +28147,251 @@ body.platform-mode .workspace-tabs { display:none !important; }
           </div>
         </div>
       </div>
+
+      <div class="view" id="independent-site">
+        <div class="isx-shell">
+          <header class="isx-head">
+            <div class="isx-title">
+              <div class="isx-logo">◈</div>
+              <div>
+                <h1>独立站管理 <span class="isx-domain">ositplc</span></h1>
+                <span class="isx-status" id="isStatus">检测中…</span>
+              </div>
+            </div>
+            <div class="isx-head-actions">
+              <select id="isLangSelect" class="isx-select" aria-label="编辑语言">
+                <option value="zh" selected>中文 zh</option>
+                <option value="en">English en</option>
+                <option value="jp">日本語 jp</option>
+                <option value="kor">한국어 kor</option>
+                <option value="ara">العربية ara</option>
+                <option value="de">Deutsch de</option>
+                <option value="fra">Français fra</option>
+                <option value="it">Italiano it</option>
+                <option value="nl">Nederlands nl</option>
+                <option value="pl">Polski pl</option>
+                <option value="pt">Português pt</option>
+                <option value="ru">Русский ru</option>
+                <option value="spa">Español spa</option>
+                <option value="th">ไทย th</option>
+                <option value="tr">Türkçe tr</option>
+                <option value="vie">Tiếng Việt vie</option>
+              </select>
+              <button class="isx-btn" id="isRefreshButton" type="button">⟳ 刷新</button>
+            </div>
+          </header>
+
+          <nav class="isx-tabs" aria-label="模块">
+            <button class="isx-tab active" type="button" data-isx-tab="dashboard">总览</button>
+            <button class="isx-tab" type="button" data-isx-tab="products">产品</button>
+            <button class="isx-tab" type="button" data-isx-tab="blog">博客</button>
+            <button class="isx-tab" type="button" data-isx-tab="contact">询盘</button>
+            <button class="isx-tab" type="button" data-isx-tab="reviews">评价</button>
+            <button class="isx-tab" type="button" data-isx-tab="media">媒体</button>
+            <button class="isx-tab" type="button" data-isx-tab="settings">设置</button>
+          </nav>
+
+          <section class="isx-panel" id="isxPanel-dashboard">
+            <div class="isx-stats">
+              <div class="isx-stat"><span class="isx-stat-label">产品</span><b class="isx-stat-value" id="isStatProducts">–</b><i class="isx-stat-glow g1"></i></div>
+              <div class="isx-stat"><span class="isx-stat-label">博客</span><b class="isx-stat-value" id="isStatBlog">–</b><i class="isx-stat-glow g2"></i></div>
+              <div class="isx-stat"><span class="isx-stat-label">询盘</span><b class="isx-stat-value" id="isStatContact">–</b><i class="isx-stat-glow g3"></i></div>
+              <div class="isx-stat"><span class="isx-stat-label">媒体</span><b class="isx-stat-value" id="isStatMedia">–</b><i class="isx-stat-glow g4"></i></div>
+              <div class="isx-stat"><span class="isx-stat-label">今日访问</span><b class="isx-stat-value" id="isStatToday">–</b><i class="isx-stat-glow g5"></i></div>
+            </div>
+            <div class="isx-grid2">
+              <div class="isx-card">
+                <div class="isx-card-head"><h3>访问趋势 · 近 14 天</h3><span class="isx-card-meta" id="isVisitMeta"></span></div>
+                <canvas id="isxVisitChart" height="180"></canvas>
+              </div>
+              <div class="isx-card">
+                <div class="isx-card-head"><h3>热门页面 TOP 10</h3></div>
+                <ul class="isx-toplevel" id="isxTopPaths"><li class="isx-empty">加载中…</li></ul>
+              </div>
+            </div>
+          </section>
+
+          <section class="isx-panel" id="isxPanel-products" hidden>
+            <div class="isx-panel-bar"><b id="isProductCount">0 个产品</b><button class="isx-btn primary" id="isProductAddButton" type="button">+ 新增产品</button></div>
+            <div class="isx-table-wrap"><table class="isx-table"><thead><tr><th>名称</th><th>分类</th><th>状态</th><th>排序</th><th>操作</th></tr></thead><tbody id="isProductList"><tr><td colspan="5" class="isx-empty">加载中…</td></tr></tbody></table></div>
+          </section>
+
+          <section class="isx-panel" id="isxPanel-blog" hidden>
+            <div class="isx-panel-bar"><b id="isBlogCount">0 篇文章</b><button class="isx-btn primary" id="isBlogAddButton" type="button">+ 新增文章</button></div>
+            <div class="isx-table-wrap"><table class="isx-table"><thead><tr><th>标题</th><th>slug</th><th>分类</th><th>状态</th><th>操作</th></tr></thead><tbody id="isBlogList"><tr><td colspan="5" class="isx-empty">加载中…</td></tr></tbody></table></div>
+          </section>
+
+          <section class="isx-panel" id="isxPanel-contact" hidden>
+            <div class="isx-panel-bar"><b id="isContactCount">0 条询盘</b></div>
+            <div class="isx-table-wrap"><table class="isx-table"><thead><tr><th>姓名</th><th>公司</th><th>电话</th><th>邮箱</th><th>留言</th><th>时间</th><th>操作</th></tr></thead><tbody id="isContactList"><tr><td colspan="7" class="isx-empty">加载中…</td></tr></tbody></table></div>
+          </section>
+
+          <section class="isx-panel" id="isxPanel-reviews" hidden>
+            <div class="isx-panel-bar">
+              <b id="isReviewCount">0 条评价</b>
+              <div class="isx-filter" id="isReviewFilter">
+                <button class="isx-chip active" type="button" data-rfilter="all">全部</button>
+                <button class="isx-chip" type="button" data-rfilter="pending">待审</button>
+                <button class="isx-chip" type="button" data-rfilter="approved">已通过</button>
+                <button class="isx-chip" type="button" data-rfilter="rejected">已拒绝</button>
+              </div>
+            </div>
+            <div class="isx-table-wrap"><table class="isx-table"><thead><tr><th>评分</th><th>内容</th><th>作者</th><th>状态</th><th>操作</th></tr></thead><tbody id="isReviewList"><tr><td colspan="5" class="isx-empty">加载中…</td></tr></tbody></table></div>
+          </section>
+
+          <section class="isx-panel" id="isxPanel-media" hidden>
+            <div class="isx-panel-bar">
+              <b id="isMediaCount">0 个文件</b>
+              <label class="isx-btn primary" for="isMediaFile">↑ 上传文件</label>
+              <input type="file" id="isMediaFile" multiple hidden>
+            </div>
+            <div class="isx-media-grid" id="isMediaGrid"><span class="isx-empty">加载中…</span></div>
+          </section>
+
+          <section class="isx-panel" id="isxPanel-settings" hidden>
+            <div class="isx-grid2">
+              <div class="isx-card isx-form-card">
+                <div class="isx-card-head"><h3>站点信息</h3></div>
+                <label class="isx-field"><span>站点名称</span><input id="isSet_siteName"></label>
+                <label class="isx-field"><span>站点描述</span><textarea id="isSet_siteDescription"></textarea></label>
+                <div class="isx-row2">
+                  <label class="isx-field"><span>站点 URL</span><input id="isSet_siteUrl"></label>
+                  <label class="isx-field"><span>管理邮箱</span><input id="isSet_adminEmail"></label>
+                </div>
+                <div class="isx-row2">
+                  <label class="isx-field"><span>默认语言</span><select id="isSet_defaultLanguage"><option>zh</option><option>en</option><option>jp</option><option>kor</option><option>ara</option></select></label>
+                  <label class="isx-field"><span>时区</span><select id="isSet_timezone"><option>Asia/Shanghai</option><option>Asia/Tokyo</option><option>Asia/Singapore</option><option>UTC</option><option>America/New_York</option><option>America/Los_Angeles</option><option>Europe/London</option></select></label>
+                </div>
+                <div class="isx-row2">
+                  <label class="isx-field"><span>货币</span><select id="isSet_currency"><option>CNY</option><option>USD</option><option>EUR</option><option>GBP</option><option>JPY</option></select></label>
+                  <label class="isx-field"><span>维护模式</span><select id="isSet_maintenanceMode"><option value="0">关</option><option value="1">开</option></select></label>
+                </div>
+              </div>
+              <div class="isx-card isx-form-card">
+                <div class="isx-card-head"><h3>SEO</h3></div>
+                <label class="isx-field"><span>meta 标题</span><input id="isSet_metaTitle"></label>
+                <label class="isx-field"><span>meta 描述</span><textarea id="isSet_metaDescription"></textarea></label>
+                <label class="isx-field"><span>meta 关键词</span><input id="isSet_metaKeywords"></label>
+                <label class="isx-field"><span>OG 图片</span><input id="isSet_ogImage"></label>
+                <div class="isx-card-head" style="margin-top:14px"><h3>邮件通知 (SMTP)</h3></div>
+                <div class="isx-row2">
+                  <label class="isx-field"><span>SMTP Host</span><input id="isSet_smtpHost"></label>
+                  <label class="isx-field"><span>SMTP Port</span><input id="isSet_smtpPort" type="number"></label>
+                </div>
+                <div class="isx-row2">
+                  <label class="isx-field"><span>SMTP 账号</span><input id="isSet_smtpUser"></label>
+                  <label class="isx-field"><span>SMTP 密码</span><input id="isSet_smtpPass" type="password"></label>
+                </div>
+                <div class="isx-row2">
+                  <label class="isx-field"><span>发件邮箱</span><input id="isSet_fromEmail"></label>
+                  <label class="isx-field"><span>发件人名称</span><input id="isSet_fromName"></label>
+                </div>
+              </div>
+            </div>
+            <div class="isx-panel-bar" style="margin-top:14px"><span class="isx-hint" id="isSetHint"></span><button class="isx-btn primary" id="isSetSave" type="button">保存设置</button></div>
+          </section>
+        </div>
+
+        <div class="isx-drawer-backdrop" id="isDrawerBackdrop" hidden></div>
+        <aside class="isx-drawer" id="isDrawer" hidden></aside>
+        <style>
+          /* ===== 独立站管理 · 深色科技风(自包含,不影响 GoodJob 其它页面) ===== */
+          #independent-site { --ix-bg:#070b16; --ix-surface:rgba(148,163,184,.06); --ix-line:rgba(34,211,238,.16); --ix-line-soft:rgba(148,163,184,.12); --ix-ink:#e6f1ff; --ix-muted:#7d8ca6; --ix-cyan:#22d3ee; --ix-blue:#3b82f6; --ix-green:#34d399; --ix-amber:#fbbf24; --ix-red:#f87171; }
+          #independent-site .isx-shell { background:radial-gradient(1200px 500px at 20% -10%, rgba(34,211,238,.09), transparent 60%), radial-gradient(900px 420px at 90% 0%, rgba(59,130,246,.1), transparent 55%), var(--ix-bg); border:1px solid var(--ix-line); border-radius:14px; padding:18px; display:grid; gap:14px; min-height:calc(100vh - 140px); }
+          #independent-site .isx-head { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+          #independent-site .isx-title { display:flex; align-items:center; gap:12px; }
+          #independent-site .isx-logo { width:42px; height:42px; border-radius:11px; display:grid; place-items:center; font-size:20px; color:#04121a; background:linear-gradient(135deg, var(--ix-cyan), var(--ix-blue)); box-shadow:0 0 18px rgba(34,211,238,.45); }
+          #independent-site .isx-title h1 { font-size:17px; color:var(--ix-ink); margin:0; letter-spacing:.5px; }
+          #independent-site .isx-domain { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--ix-cyan); border:1px solid var(--ix-line); border-radius:5px; padding:2px 7px; margin-left:6px; vertical-align:2px; }
+          #independent-site .isx-status { display:inline-block; margin-top:4px; font-size:10px; font-weight:700; letter-spacing:.4px; color:var(--ix-muted); }
+          #independent-site .isx-status.online { color:var(--ix-green); text-shadow:0 0 8px rgba(52,211,153,.6); }
+          #independent-site .isx-status.offline { color:var(--ix-amber); }
+          #independent-site .isx-head-actions { display:flex; gap:8px; align-items:center; }
+          #independent-site .isx-select, #independent-site .isx-btn { height:34px; border-radius:8px; border:1px solid var(--ix-line); background:var(--ix-surface); color:var(--ix-ink); font-size:12px; font-weight:600; padding:0 12px; outline:0; cursor:pointer; backdrop-filter:blur(8px); }
+          #independent-site .isx-select { padding:0 8px; }
+          #independent-site .isx-btn:hover { border-color:var(--ix-cyan); box-shadow:0 0 10px rgba(34,211,238,.25); }
+          #independent-site .isx-btn.primary { background:linear-gradient(135deg, rgba(34,211,238,.2), rgba(59,130,246,.2)); border-color:var(--ix-cyan); color:#d9f6ff; }
+          #independent-site .isx-tabs { display:flex; gap:6px; flex-wrap:wrap; }
+          #independent-site .isx-tab { border:1px solid transparent; background:transparent; color:var(--ix-muted); font-size:12px; font-weight:700; padding:8px 16px; border-radius:9px; cursor:pointer; letter-spacing:.3px; }
+          #independent-site .isx-tab:hover { color:var(--ix-ink); }
+          #independent-site .isx-tab.active { color:#d9f6ff; background:linear-gradient(135deg, rgba(34,211,238,.16), rgba(59,130,246,.12)); border-color:var(--ix-line); box-shadow:0 0 14px rgba(34,211,238,.18), inset 0 0 12px rgba(34,211,238,.06); }
+          #independent-site .isx-panel { display:grid; gap:12px; }
+          #independent-site .isx-stats { display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; }
+          #independent-site .isx-stat { position:relative; overflow:hidden; border:1px solid var(--ix-line-soft); border-radius:11px; background:var(--ix-surface); padding:14px 16px; backdrop-filter:blur(8px); }
+          #independent-site .isx-stat-label { font-size:10px; font-weight:800; letter-spacing:1px; color:var(--ix-muted); }
+          #independent-site .isx-stat-value { display:block; margin-top:6px; font-family:ui-monospace,Menlo,monospace; font-size:26px; font-weight:700; color:var(--ix-ink); text-shadow:0 0 14px rgba(34,211,238,.35); }
+          #independent-site .isx-stat-glow { position:absolute; right:-18px; top:-18px; width:64px; height:64px; border-radius:50%; filter:blur(18px); opacity:.5; }
+          #independent-site .isx-stat-glow.g1 { background:var(--ix-cyan); }
+          #independent-site .isx-stat-glow.g2 { background:var(--ix-blue); }
+          #independent-site .isx-stat-glow.g3 { background:var(--ix-green); }
+          #independent-site .isx-stat-glow.g4 { background:var(--ix-amber); }
+          #independent-site .isx-stat-glow.g5 { background:#a78bfa; }
+          #independent-site .isx-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+          #independent-site .isx-card { border:1px solid var(--ix-line-soft); border-radius:11px; background:var(--ix-surface); padding:14px; backdrop-filter:blur(8px); }
+          #independent-site .isx-card-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+          #independent-site .isx-card-head h3 { margin:0; font-size:12px; font-weight:800; letter-spacing:.6px; color:var(--ix-ink); }
+          #independent-site .isx-card-meta { font-size:10px; color:var(--ix-muted); font-family:ui-monospace,Menlo,monospace; }
+          #independent-site .isx-toplevel { list-style:none; margin:0; padding:0; display:grid; gap:7px; }
+          #independent-site .isx-toplevel li { display:flex; align-items:center; gap:10px; font-size:11px; color:var(--ix-ink); }
+          #independent-site .isx-toplevel .isx-path { font-family:ui-monospace,Menlo,monospace; color:var(--ix-muted); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+          #independent-site .isx-toplevel .isx-bar { height:4px; border-radius:2px; background:linear-gradient(90deg, var(--ix-cyan), var(--ix-blue)); box-shadow:0 0 8px rgba(34,211,238,.4); }
+          #independent-site .isx-panel-bar { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+          #independent-site .isx-panel-bar b { font-size:12px; color:var(--ix-muted); font-weight:700; }
+          #independent-site .isx-table-wrap { border:1px solid var(--ix-line-soft); border-radius:11px; overflow-x:auto; background:var(--ix-surface); backdrop-filter:blur(8px); }
+          #independent-site .isx-table { width:100%; border-collapse:collapse; font-size:12px; }
+          #independent-site .isx-table th { text-align:left; padding:11px 14px; color:var(--ix-muted); font-size:10px; font-weight:800; letter-spacing:.8px; border-bottom:1px solid var(--ix-line-soft); white-space:nowrap; }
+          #independent-site .isx-table td { padding:11px 14px; border-bottom:1px solid var(--ix-line-soft); color:var(--ix-ink); vertical-align:middle; }
+          #independent-site .isx-table tr:last-child td { border-bottom:0; }
+          #independent-site .isx-table tbody tr:hover td { background:rgba(34,211,238,.05); }
+          #independent-site .isx-table .isx-name { max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+          #independent-site .isx-empty { text-align:center; color:var(--ix-muted); padding:26px; font-size:12px; }
+          #independent-site .isx-badge { display:inline-block; padding:3px 9px; border-radius:20px; font-size:10px; font-weight:800; border:1px solid; }
+          #independent-site .isx-badge.published { color:var(--ix-green); border-color:rgba(52,211,153,.4); background:rgba(52,211,153,.08); }
+          #independent-site .isx-badge.draft { color:var(--ix-amber); border-color:rgba(251,191,36,.4); background:rgba(251,191,36,.08); }
+          #independent-site .isx-badge.approved { color:var(--ix-green); border-color:rgba(52,211,153,.4); background:rgba(52,211,153,.08); }
+          #independent-site .isx-badge.pending { color:var(--ix-amber); border-color:rgba(251,191,36,.4); background:rgba(251,191,36,.08); }
+          #independent-site .isx-badge.rejected { color:var(--ix-red); border-color:rgba(248,113,113,.4); background:rgba(248,113,113,.08); }
+          #independent-site .isx-row-actions { display:flex; gap:6px; }
+          #independent-site .isx-row-actions button { border:1px solid var(--ix-line-soft); background:transparent; border-radius:6px; padding:5px 10px; font-size:11px; font-weight:700; color:var(--ix-ink); cursor:pointer; }
+          #independent-site .isx-row-actions button:hover { border-color:var(--ix-cyan); color:var(--ix-cyan); box-shadow:0 0 8px rgba(34,211,238,.25); }
+          #independent-site .isx-row-actions button.danger:hover { border-color:var(--ix-red); color:var(--ix-red); box-shadow:0 0 8px rgba(248,113,113,.25); }
+          #independent-site .isx-filter { display:flex; gap:5px; }
+          #independent-site .isx-chip { border:1px solid var(--ix-line-soft); background:transparent; color:var(--ix-muted); border-radius:20px; padding:5px 12px; font-size:11px; font-weight:700; cursor:pointer; }
+          #independent-site .isx-chip.active { color:#d9f6ff; border-color:var(--ix-cyan); background:rgba(34,211,238,.1); }
+          #independent-site .isx-stars { color:var(--ix-amber); letter-spacing:1px; font-size:11px; }
+          #independent-site .isx-media-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
+          #independent-site .isx-media-item { border:1px solid var(--ix-line-soft); border-radius:10px; overflow:hidden; background:var(--ix-surface); position:relative; }
+          #independent-site .isx-media-item img { width:100%; height:100px; object-fit:cover; display:block; background:#0a1120; }
+          #independent-site .isx-media-meta { padding:8px 10px; display:grid; gap:3px; }
+          #independent-site .isx-media-name { font-size:11px; color:var(--ix-ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+          #independent-site .isx-media-size { font-size:10px; color:var(--ix-muted); font-family:ui-monospace,Menlo,monospace; }
+          #independent-site .isx-media-del { position:absolute; top:6px; right:6px; border:1px solid var(--ix-line-soft); background:rgba(7,11,22,.7); color:var(--ix-ink); border-radius:6px; width:26px; height:26px; cursor:pointer; font-size:12px; backdrop-filter:blur(4px); }
+          #independent-site .isx-media-del:hover { border-color:var(--ix-red); color:var(--ix-red); }
+          #independent-site .isx-field { display:grid; gap:6px; margin-bottom:12px; }
+          #independent-site .isx-field > span { font-size:10px; font-weight:800; letter-spacing:.6px; color:var(--ix-muted); }
+          #independent-site .isx-field input, #independent-site .isx-field textarea, #independent-site .isx-field select { width:100%; box-sizing:border-box; border:1px solid var(--ix-line-soft); border-radius:8px; padding:9px 11px; font-size:12px; color:var(--ix-ink); background:rgba(7,11,22,.5); outline:0; font-family:inherit; }
+          #independent-site .isx-field textarea { min-height:64px; resize:vertical; }
+          #independent-site .isx-field input:focus, #independent-site .isx-field textarea:focus, #independent-site .isx-field select:focus { border-color:var(--ix-cyan); box-shadow:0 0 0 3px rgba(34,211,238,.12); }
+          #independent-site .isx-row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+          #independent-site .isx-hint { font-size:10px; color:var(--ix-muted); }
+          #independent-site .isx-drawer-backdrop { position:fixed; inset:0; background:rgba(4,8,16,.6); backdrop-filter:blur(2px); z-index:200; }
+          #independent-site .isx-drawer-backdrop[hidden] { display:none; }
+          #independent-site .isx-drawer { position:fixed; top:0; right:0; height:100vh; width:min(680px,94vw); background:#0a1120; border-left:1px solid var(--ix-line); z-index:201; box-shadow:-8px 0 30px rgba(0,0,0,.5); display:flex; flex-direction:column; }
+          #independent-site .isx-drawer[hidden] { display:none; }
+          #independent-site .isx-drawer-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; border-bottom:1px solid var(--ix-line-soft); }
+          #independent-site .isx-drawer-head h2 { font-size:15px; color:var(--ix-ink); margin:0; letter-spacing:.4px; }
+          #independent-site .isx-drawer-body { flex:1; overflow-y:auto; padding:16px 18px; display:grid; gap:14px; align-content:start; }
+          #independent-site .isx-drawer-foot { display:flex; justify-content:flex-end; gap:8px; padding:14px 18px; border-top:1px solid var(--ix-line-soft); }
+          #independent-site .isx-list-editor { display:grid; gap:7px; }
+          #independent-site .isx-list-row { display:flex; gap:7px; }
+          #independent-site .isx-list-row input { flex:1; }
+          #independent-site .isx-list-row button { border:1px solid var(--ix-line-soft); background:transparent; border-radius:6px; width:32px; cursor:pointer; color:var(--ix-muted); }
+          #independent-site .isx-add-row { justify-self:start; border:1px dashed var(--ix-line); background:rgba(34,211,238,.05); border-radius:7px; padding:7px 12px; font-size:11px; font-weight:700; color:var(--ix-cyan); cursor:pointer; }
+          #independent-site .isx-section-block { border:1px solid var(--ix-line-soft); border-radius:8px; padding:12px; display:grid; gap:10px; position:relative; }
+          #independent-site .isx-section-block .isx-remove-section { position:absolute; top:10px; right:10px; border:1px solid var(--ix-line-soft); background:transparent; border-radius:6px; padding:4px 9px; font-size:10px; color:var(--ix-muted); cursor:pointer; }
+        </style>
+      </div>
+      </div>
     </main>
   </div>
 
@@ -28223,6 +28469,7 @@ body.platform-mode .workspace-tabs { display:none !important; }
       imports: "导入导出",
       "database-maintenance": "数据库维护",
       "ai-config": "AI配置",
+      "independent-site": "独立站管理",
       settings: "系统设置",
       profile: "个人设置"
     };
@@ -28329,6 +28576,592 @@ body.platform-mode .workspace-tabs { display:none !important; }
     });
 
     renderTopbarForView("dashboard");
+  </script>
+  <script>
+  // 独立站管理:深色科技风,7 模块(总览/产品/博客/询盘/评价/媒体/设置),经 CRM 后端代理 /api/independent-site/*
+  (function () {
+    const view = document.getElementById("independent-site");
+    if (!view) return;
+    const $ = (s, r = view) => r.querySelector(s);
+    const $$ = (s, r = view) => [...r.querySelectorAll(s)];
+    const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const API = "/api/independent-site";
+    const cookieValue = (name) => document.cookie.split(";").map((p) => p.trim()).find((p) => p.startsWith(name + "="))?.slice(name.length + 1) || "";
+
+    const state = {
+      tab: "dashboard",
+      lang: "zh",
+      products: [],
+      blog: [],
+      contacts: [],
+      reviews: [],
+      media: [],
+      settings: null,
+      reviewFilter: "all",
+      loaded: {},
+      editing: null
+    };
+
+    async function api(path, opts = {}) {
+      const method = (opts.method || "GET").toUpperCase();
+      const csrf = cookieValue("gj_csrf");
+      const headers = { "Content-Type": "application/json", ...(!["GET", "HEAD", "OPTIONS"].includes(method) && csrf ? { "x-csrf-token": csrf } : {}) };
+      if (opts.headers) Object.assign(headers, opts.headers);
+      const res = await fetch(API + path, {
+        credentials: "same-origin",
+        headers,
+        method,
+        body: opts.body !== undefined ? (opts.raw ? opts.body : JSON.stringify(opts.body)) : undefined
+      });
+      const text = await res.text();
+      let data;
+      try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+      if (!res.ok) throw new Error((data && data.error) || ("HTTP " + res.status));
+      return data;
+    }
+
+    // ---- i18n helpers(当前语言取值 / 合并回原对象,保留其它语言)----
+    function i18nGet(obj, lang) {
+      if (!obj || typeof obj !== "object") return "";
+      if (obj[lang] !== undefined && obj[lang] !== null) return obj[lang];
+      if (obj.en !== undefined) return obj.en;
+      const k = Object.keys(obj);
+      return k.length ? obj[k[0]] : "";
+    }
+    const i18nSet = (obj, lang, value) => ({ ...(obj && typeof obj === "object" ? obj : {}), [lang]: value });
+    const i18nListGet = (obj, lang) => { const v = obj && typeof obj === "object" ? obj[lang] : undefined; return Array.isArray(v) ? v.slice() : []; };
+    const i18nListSet = (obj, lang, arr) => ({ ...(obj && typeof obj === "object" ? obj : {}), [lang]: arr });
+
+    // ---- status ----
+    async function loadStatus() {
+      const el = $("#isStatus");
+      try {
+        const s = await api("/status");
+        el.textContent = (s.online ? "● 在线 · " : "○ 离线 · ") + s.base;
+        el.className = "isx-status " + (s.online ? "online" : "offline");
+      } catch {
+        el.textContent = "检测失败";
+        el.className = "isx-status offline";
+      }
+    }
+
+    // ---- 总览 ----
+    async function loadDashboard() {
+      try {
+        const [stats, visits] = await Promise.all([api("/stats"), api("/visits")]);
+        $("#isStatProducts").textContent = stats.totalProducts ?? 0;
+        $("#isStatBlog").textContent = stats.totalBlogPosts ?? 0;
+        $("#isStatContact").textContent = stats.totalContacts ?? 0;
+        $("#isStatMedia").textContent = stats.totalMediaFiles ?? 0;
+        $("#isStatToday").textContent = visits.today ?? 0;
+        $("#isVisitMeta").textContent = `7d ${visits.last7 ?? 0} · 30d ${visits.last30 ?? 0}`;
+        renderVisitChart(visits.daily || []);
+        const top = visits.top || [];
+        const max = Math.max(1, ...top.map((t) => t.c));
+        $("#isxTopPaths").innerHTML = top.length
+          ? top.map((t) => '<li><span class="isx-path">' + esc(t.path) + '</span><span class="isx-bar" style="width:' + Math.max(6, (t.c / max) * 120) + 'px"></span><b>' + t.c + "</b></li>").join("")
+          : '<li class="isx-empty">暂无数据(部署后开始累计)</li>';
+      } catch (e) {
+        $("#isVisitMeta").textContent = "加载失败:" + e.message;
+      }
+    }
+
+    function renderVisitChart(daily) {
+      const canvas = $("#isxVisitChart");
+      if (!canvas) return;
+      // 14 天序列(无访问的日期补 0)
+      const m = new Map(daily.map((d) => [String(d.day).slice(0, 10), d.c]));
+      const series = [];
+      for (let i = 13; i >= 0; i--) {
+        const key = new Date(Date.now() - i * 86400000).toLocaleDateString("en-CA");
+        series.push({ day: key, c: m.get(key) || 0 });
+      }
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.clientWidth || 500;
+      const h = 180;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, w, h);
+      const pad = { l: 30, r: 10, t: 14, b: 22 };
+      const cw = w - pad.l - pad.r;
+      const ch = h - pad.t - pad.b;
+      const max = Math.max(1, ...series.map((d) => d.c));
+      ctx.strokeStyle = "rgba(148,163,184,.12)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 3; i++) {
+        const y = pad.t + (ch / 3) * i;
+        ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+        ctx.fillStyle = "#7d8ca6";
+        ctx.font = "9px ui-monospace,monospace";
+        ctx.textAlign = "right";
+        ctx.fillText(String(Math.round(max - (max / 3) * i)), pad.l - 5, y + 3);
+      }
+      const x = (i) => pad.l + (cw / 13) * i;
+      const y = (v) => pad.t + ch - (v / max) * ch;
+      const grad = ctx.createLinearGradient(0, pad.t, 0, h - pad.b);
+      grad.addColorStop(0, "rgba(34,211,238,.28)");
+      grad.addColorStop(1, "rgba(34,211,238,0)");
+      ctx.beginPath();
+      ctx.moveTo(x(0), pad.t + ch);
+      series.forEach((d, i) => ctx.lineTo(x(i), y(d.c)));
+      ctx.lineTo(x(13), pad.t + ch);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.beginPath();
+      series.forEach((d, i) => (i ? ctx.lineTo(x(i), y(d.c)) : ctx.moveTo(x(i), y(d.c))));
+      ctx.strokeStyle = "#22d3ee";
+      ctx.lineWidth = 2;
+      ctx.shadowColor = "rgba(34,211,238,.8)";
+      ctx.shadowBlur = 8;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      series.forEach((d, i) => {
+        ctx.beginPath();
+        ctx.arc(x(i), y(d.c), 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#e6f1ff";
+        ctx.fill();
+        if (i % 2 === 0) {
+          ctx.fillStyle = "#7d8ca6";
+          ctx.font = "9px ui-monospace,monospace";
+          ctx.textAlign = "center";
+          ctx.fillText(d.day.slice(5), x(i), h - 6);
+        }
+      });
+    }
+
+    // ---- 产品 ----
+    async function loadProducts() {
+      const list = $("#isProductList");
+      try {
+        state.products = (await api("/products")) || [];
+        state.loaded.products = true;
+        renderProducts();
+      } catch (e) {
+        list.innerHTML = '<tr><td colspan="5" class="isx-empty">加载失败:' + esc(e.message) + "</td></tr>";
+      }
+    }
+    function renderProducts() {
+      const lang = state.lang;
+      $("#isProductCount").textContent = state.products.length + " 个产品";
+      const list = $("#isProductList");
+      if (!state.products.length) { list.innerHTML = '<tr><td colspan="5" class="isx-empty">暂无产品</td></tr>'; return; }
+      list.innerHTML = state.products.map((p) => {
+        const name = i18nGet(p.name, lang) || "(无名称)";
+        return '<tr><td class="isx-name" title="' + esc(name) + '">' + esc(name) + "</td>" +
+          "<td>" + esc(p.category) + "</td>" +
+          '<td><span class="isx-badge ' + p.status + '">' + (p.status === "published" ? "已发布" : "草稿") + "</span></td>" +
+          "<td>" + (p.sort_order ?? 0) + "</td>" +
+          '<td><div class="isx-row-actions"><button data-act="edit" data-id="' + esc(p.id) + '">编辑</button>' +
+          '<button data-act="del" data-id="' + esc(p.id) + '" class="danger">删除</button></div></td></tr>';
+      }).join("");
+      $$("#isProductList [data-act]").forEach((b) => b.addEventListener("click", () => {
+        const item = state.products.find((x) => x.id === b.dataset.id);
+        if (b.dataset.act === "edit") openEditor("product", item); else delProduct(item);
+      }));
+    }
+
+    // ---- 博客 ----
+    async function loadBlog() {
+      const list = $("#isBlogList");
+      try {
+        state.blog = (await api("/blog")) || [];
+        state.loaded.blog = true;
+        renderBlog();
+      } catch (e) {
+        list.innerHTML = '<tr><td colspan="5" class="isx-empty">加载失败:' + esc(e.message) + "</td></tr>";
+      }
+    }
+    function renderBlog() {
+      const lang = state.lang;
+      $("#isBlogCount").textContent = state.blog.length + " 篇文章";
+      const list = $("#isBlogList");
+      if (!state.blog.length) { list.innerHTML = '<tr><td colspan="5" class="isx-empty">暂无文章</td></tr>'; return; }
+      list.innerHTML = state.blog.map((b) => {
+        const title = i18nGet(b.title, lang) || "(无标题)";
+        return '<tr><td class="isx-name" title="' + esc(title) + '">' + esc(title) + "</td>" +
+          "<td>" + esc(b.slug) + "</td><td>" + esc(b.category) + "</td>" +
+          '<td><span class="isx-badge ' + b.status + '">' + (b.status === "published" ? "已发布" : "草稿") + "</span></td>" +
+          '<td><div class="isx-row-actions"><button data-act="edit" data-slug="' + esc(b.slug) + '">编辑</button>' +
+          '<button data-act="del" data-slug="' + esc(b.slug) + '" class="danger">删除</button></div></td></tr>';
+      }).join("");
+      $$("#isBlogList [data-act]").forEach((b) => b.addEventListener("click", () => {
+        const item = state.blog.find((x) => x.slug === b.dataset.slug);
+        if (b.dataset.act === "edit") openEditor("blog", item); else delBlog(item);
+      }));
+    }
+
+    // ---- 询盘 ----
+    async function loadContacts() {
+      try {
+        state.contacts = (await api("/contact")) || [];
+        state.loaded.contact = true;
+        renderContacts();
+      } catch (e) {
+        $("#isContactList").innerHTML = '<tr><td colspan="7" class="isx-empty">加载失败:' + esc(e.message) + "</td></tr>";
+      }
+    }
+    function renderContacts() {
+      $("#isContactCount").textContent = state.contacts.length + " 条询盘";
+      const list = $("#isContactList");
+      if (!state.contacts.length) { list.innerHTML = '<tr><td colspan="7" class="isx-empty">暂无询盘</td></tr>'; return; }
+      list.innerHTML = state.contacts.map((c) =>
+        "<tr><td>" + esc(c.name) + "</td><td>" + esc(c.company) + "</td><td>" + esc(c.phone) + "</td><td>" + esc(c.email) + "</td>" +
+        '<td class="isx-name" title="' + esc(c.message) + '">' + esc(c.message) + "</td>" +
+        "<td>" + esc(String(c.created_at || "").slice(0, 16)) + "</td>" +
+        '<td><div class="isx-row-actions"><button data-cdel="' + esc(c.id) + '" class="danger">删除</button></div></td></tr>'
+      ).join("");
+      $$("#isContactList [data-cdel]").forEach((b) => b.addEventListener("click", async () => {
+        if (!confirm("删除该询盘?")) return;
+        try { await api("/contact/" + encodeURIComponent(b.dataset.cdel), { method: "DELETE" }); loadContacts(); }
+        catch (e) { alert("删除失败:" + e.message); }
+      }));
+    }
+
+    // ---- 评价 ----
+    async function loadReviews() {
+      try {
+        state.reviews = (await api("/reviews")) || [];
+        state.loaded.reviews = true;
+        renderReviews();
+      } catch (e) {
+        $("#isReviewList").innerHTML = '<tr><td colspan="5" class="isx-empty">加载失败:' + esc(e.message) + "</td></tr>";
+      }
+    }
+    function renderReviews() {
+      const lang = state.lang;
+      const shown = state.reviews.filter((r) => state.reviewFilter === "all" || r.status === state.reviewFilter);
+      $("#isReviewCount").textContent = state.reviews.length + " 条评价";
+      const list = $("#isReviewList");
+      if (!shown.length) { list.innerHTML = '<tr><td colspan="5" class="isx-empty">暂无评价</td></tr>'; return; }
+      list.innerHTML = shown.map((r) => {
+        const stars = "★".repeat(r.rating || 0) + "☆".repeat(5 - (r.rating || 0));
+        const content = i18nGet(r.content, lang) || i18nGet(r.title, lang);
+        return "<tr><td><span class=\"isx-stars\">" + stars + "</span></td>" +
+          '<td class="isx-name" title="' + esc(content) + '">' + esc(content).slice(0, 80) + "</td>" +
+          "<td>" + esc(r.author_name) + (r.country ? " · " + esc(r.country) : "") + "</td>" +
+          '<td><span class="isx-badge ' + r.status + '">' + ({ pending: "待审", approved: "已通过", rejected: "已拒绝" }[r.status] || r.status) + "</span></td>" +
+          '<td><div class="isx-row-actions">' +
+          (r.status !== "approved" ? '<button data-ract="approved" data-rid="' + esc(r.id) + '">通过</button>' : "") +
+          (r.status !== "rejected" ? '<button data-ract="rejected" data-rid="' + esc(r.id) + '">拒绝</button>' : "") +
+          '<button data-ract="del" data-rid="' + esc(r.id) + '" class="danger">删除</button></div></td></tr>';
+      }).join("");
+      $$("#isReviewList [data-ract]").forEach((b) => b.addEventListener("click", async () => {
+        const id = b.dataset.rid;
+        if (b.dataset.ract === "del" && !confirm("删除该评价?")) return;
+        try {
+          if (b.dataset.ract === "del") await api("/reviews/" + encodeURIComponent(id), { method: "DELETE" });
+          else await api("/reviews/" + encodeURIComponent(id), { method: "PUT", body: { status: b.dataset.ract } });
+          loadReviews();
+        } catch (e) { alert("操作失败:" + e.message); }
+      }));
+    }
+
+    // ---- 媒体 ----
+    async function loadMedia() {
+      try {
+        state.media = (await api("/media")) || [];
+        state.loaded.media = true;
+        renderMedia();
+      } catch (e) {
+        $("#isMediaGrid").innerHTML = '<span class="isx-empty">加载失败:' + esc(e.message) + "</span>";
+      }
+    }
+    function renderMedia() {
+      $("#isMediaCount").textContent = state.media.length + " 个文件";
+      const grid = $("#isMediaGrid");
+      if (!state.media.length) { grid.innerHTML = '<span class="isx-empty">暂无文件</span>'; return; }
+      grid.innerHTML = state.media.map((m) =>
+        '<div class="isx-media-item">' +
+        (m.type === "image" ? '<img src="' + esc(m.url) + '" alt="" loading="lazy">' : '<div style="height:100px;display:grid;place-items:center;font-size:26px">📄</div>') +
+        '<div class="isx-media-meta"><span class="isx-media-name" title="' + esc(m.name) + '">' + esc(m.name) + "</span>" +
+        '<span class="isx-media-size">' + (m.size ? (m.size / 1024).toFixed(0) + " KB" : "") + "</span></div>" +
+        '<button class="isx-media-del" data-mid="' + esc(m.id) + '" title="删除">×</button></div>'
+      ).join("");
+      $$("#isMediaGrid [data-mid]").forEach((b) => b.addEventListener("click", async () => {
+        if (!confirm("删除该文件?")) return;
+        try { await api("/media/" + encodeURIComponent(b.dataset.mid), { method: "DELETE" }); loadMedia(); }
+        catch (e) { alert("删除失败:" + e.message); }
+      }));
+    }
+    async function uploadMedia(files) {
+      for (const file of files) {
+        try {
+          const buf = new Uint8Array(await file.arrayBuffer());
+          await api("/media/upload", { method: "POST", raw: true, body: buf, headers: { "X-File-Name": file.name } });
+        } catch (e) { alert("上传 " + file.name + " 失败:" + e.message); }
+      }
+      loadMedia();
+    }
+
+    // ---- 设置 ----
+    const SET_FIELDS = ["siteName", "siteDescription", "siteUrl", "adminEmail", "defaultLanguage", "timezone", "currency", "maintenanceMode", "metaTitle", "metaDescription", "metaKeywords", "ogImage", "smtpHost", "smtpPort", "smtpUser", "smtpPass", "fromEmail", "fromName"];
+    async function loadSettings() {
+      try {
+        state.settings = (await api("/settings")) || {};
+        state.loaded.settings = true;
+        for (const k of SET_FIELDS) {
+          const el = $("#isSet_" + k);
+          if (!el) continue;
+          const v = state.settings[k];
+          if (k === "maintenanceMode") el.value = v ? "1" : "0";
+          else if (el.tagName === "SELECT") el.value = v ?? el.value;
+          else el.value = v ?? "";
+        }
+      } catch (e) {
+        $("#isSetHint").textContent = "加载失败:" + e.message;
+      }
+    }
+    async function saveSettings() {
+      const next = { ...(state.settings || {}) };
+      for (const k of SET_FIELDS) {
+        const el = $("#isSet_" + k);
+        if (!el) continue;
+        if (k === "maintenanceMode") next[k] = el.value === "1";
+        else if (k === "smtpPort") next[k] = parseInt(el.value || "0", 10);
+        else next[k] = el.value;
+      }
+      try {
+        await api("/settings", { method: "PUT", body: next });
+        state.settings = next;
+        $("#isSetHint").textContent = "已保存 " + new Date().toLocaleTimeString();
+      } catch (e) {
+        $("#isSetHint").textContent = "保存失败:" + e.message;
+      }
+    }
+    // ---- 编辑器抽屉(产品/博客)----
+    const drawer = $("#isDrawer");
+    const backdrop = $("#isDrawerBackdrop");
+    drawer.addEventListener("click", (e) => {
+      if (e.target.classList.contains("isx-remove-row")) e.target.closest(".isx-list-row").remove();
+    });
+
+    function openEditor(type, item) {
+      state.editing = { type, item: item || null, origSections: item && Array.isArray(item.sections) ? item.sections : [] };
+      renderForm();
+      drawer.hidden = false;
+      backdrop.hidden = false;
+    }
+    function closeEditor() {
+      state.editing = null;
+      drawer.hidden = true;
+      backdrop.hidden = true;
+      drawer.innerHTML = "";
+    }
+
+    const listRow = (value) =>
+      '<div class="isx-list-row"><input value="' + esc(value) + '"><button type="button" class="isx-remove-row" title="删除">×</button></div>';
+
+    function sectionBlock(origIdx, h, p) {
+      return '<div class="isx-section-block" data-orig-idx="' + origIdx + '">' +
+        '<button class="isx-remove-section" type="button">删除段落</button>' +
+        '<label class="isx-field"><span>小标题 h</span><input class="isx-sec-h" value="' + esc(h) + '"></label>' +
+        '<label class="isx-field"><span>正文 p</span><textarea class="isx-sec-p">' + esc(p) + "</textarea></label></div>";
+    }
+
+    function renderForm() {
+      const { type, item } = state.editing;
+      const lang = state.lang;
+      const isProduct = type === "product";
+      const title = item ? (isProduct ? "编辑产品" : "编辑文章") : (isProduct ? "新增产品" : "新增文章");
+      let body = "";
+
+      if (isProduct) {
+        const feats = i18nListGet(item && item.features, lang);
+        const tags = i18nListGet(item && item.tags, lang);
+        body =
+          '<div class="isx-row2">' +
+          '<label class="isx-field"><span>产品 ID(新增可留空自动生成)</span><input id="isf_id" value="' + esc(item && item.id) + '"' + (item ? " readonly" : "") + ' placeholder="如 p41"></label>' +
+          '<label class="isx-field"><span>分类</span><select id="isf_category">' +
+          ["plc", "hmi", "drive", "sensor", "module", "accessory", "other"].map((c) => '<option value="' + c + '"' + (item && item.category === c ? " selected" : "") + ">" + c + "</option>").join("") +
+          "</select></label></div>" +
+          '<label class="isx-field"><span>名称(' + lang + ")</span><input id=\"isf_name\" value=\"" + esc(i18nGet(item && item.name, lang)) + '"></label>' +
+          '<label class="isx-field"><span>描述(' + lang + ")</span><textarea id=\"isf_description\">" + esc(i18nGet(item && item.description, lang)) + "</textarea></label>" +
+          '<label class="isx-field"><span>主图 URL</span><input id="isf_image" value="' + esc(item && item.image) + '"></label>' +
+          '<div class="isx-field"><span>图片列表(每行一个 URL)</span><textarea id="isf_images">' + esc(((item && item.images) || []).join("\n")) + "</textarea></div>" +
+          '<div class="isx-field"><span>特性 features(' + lang + ",每行一条)</span><div class=\"isx-list-editor\" id=\"isf_features\">" + feats.map(listRow).join("") + "</div>" +
+          '<button class="isx-add-row" type="button" data-add="isf_features">+ 添加特性</button></div>' +
+          '<div class="isx-field"><span>标签 tags(' + lang + ",每行一个)</span><div class=\"isx-list-editor\" id=\"isf_tags\">" + tags.map(listRow).join("") + "</div>" +
+          '<button class="isx-add-row" type="button" data-add="isf_tags">+ 添加标签</button></div>' +
+          '<div class="isx-row2">' +
+          '<label class="isx-field"><span>状态</span><select id="isf_status"><option value="draft"' + (item && item.status !== "published" ? " selected" : "") + ">草稿</option><option value=\"published\"" + (item && item.status === "published" ? " selected" : "") + ">已发布</option></select></label>" +
+          '<label class="isx-field"><span>排序 sort_order</span><input id="isf_sort" type="number" value="' + ((item && item.sort_order) ?? 0) + '"></label></div>';
+      } else {
+        const sections = state.editing.origSections;
+        body =
+          '<div class="isx-row2">' +
+          '<label class="isx-field"><span>slug(新增必填,唯一)</span><input id="isf_slug" value="' + esc(item && item.slug) + '"' + (item ? " readonly" : "") + ' placeholder="如 my-new-post"></label>' +
+          '<label class="isx-field"><span>分类</span><select id="isf_category">' +
+          ["guide", "comparison", "scenario", "faq"].map((c) => '<option value="' + c + '"' + (item && item.category === c ? " selected" : "") + ">" + c + "</option>").join("") +
+          "</select></label></div>" +
+          '<label class="isx-field"><span>标题(' + lang + ")</span><input id=\"isf_title\" value=\"" + esc(i18nGet(item && item.title, lang)) + '"></label>' +
+          '<label class="isx-field"><span>导语 intro(' + lang + ")</span><textarea id=\"isf_intro\">" + esc(i18nGet(item && item.intro, lang)) + "</textarea></label>" +
+          '<label class="isx-field"><span>摘要 excerpt</span><textarea id="isf_excerpt">' + esc(i18nGet(item && item.excerpt, lang)) + "</textarea></label>" +
+          '<div class="isx-field"><span>正文 sections(' + lang + ")</span><div id=\"isf_sections\" style=\"display:grid;gap:10px\">" +
+          sections.map((s, i) => sectionBlock(i, i18nGet(s.h, lang), i18nGet(s.p, lang))).join("") +
+          '</div><button class="isx-add-row" type="button" id="isf_add_section">+ 添加段落</button></div>' +
+          '<div class="isx-row2">' +
+          '<label class="isx-field"><span>状态</span><select id="isf_status"><option value="draft"' + (item && item.status !== "published" ? " selected" : "") + ">草稿</option><option value=\"published\"" + (item && item.status === "published" ? " selected" : "") + ">已发布</option></select></label>" +
+          '<label class="isx-field"><span>SEO 关键词</span><input id="isf_seo_keywords" value="' + esc(item && item.seo_keywords) + '"></label></div>' +
+          '<div class="isx-row2">' +
+          '<label class="isx-field"><span>SEO 标题(' + lang + ")</span><input id=\"isf_seo_title\" value=\"" + esc(i18nGet(item && item.seo_title, lang)) + '"></label>' +
+          '<label class="isx-field"><span>SEO 描述(' + lang + ")</span><input id=\"isf_seo_description\" value=\"" + esc(i18nGet(item && item.seo_description, lang)) + '"></label></div>' +
+          '<div class="isx-row2">' +
+          '<label class="isx-field"><span>精选图 featured_image</span><input id="isf_featured_image" value="' + esc(item && item.featured_image) + '"></label>' +
+          '<label class="isx-field"><span>t_key</span><input id="isf_t_key" value="' + esc(item && item.t_key) + '"></label></div>' +
+          '<label class="isx-field" style="display:flex;align-items:center;gap:8px"><span style="display:inline">设为精选 featured</span><input id="isf_featured" type="checkbox"' + (item && item.featured ? " checked" : "") + '></label>';
+      }
+
+      drawer.innerHTML =
+        '<div class="isx-drawer-head"><h2>' + title + '</h2><button class="isx-btn" id="isCloseDrawer" type="button">关闭</button></div>' +
+        '<div class="isx-drawer-body">' + body + "</div>" +
+        '<div class="isx-drawer-foot"><button class="isx-btn" id="isCancelSave" type="button">取消</button>' +
+        '<button class="isx-btn primary" id="isSaveButton" type="button">保存</button></div>';
+
+      $("#isCloseDrawer").onclick = closeEditor;
+      $("#isCancelSave").onclick = closeEditor;
+      $("#isSaveButton").onclick = saveForm;
+      backdrop.onclick = closeEditor;
+      $$("[data-add]").forEach((b) => (b.onclick = () => document.getElementById(b.dataset.add).insertAdjacentHTML("beforeend", listRow(""))));
+      const addSec = $("#isf_add_section");
+      if (addSec) addSec.onclick = () => $("#isf_sections").insertAdjacentHTML("beforeend", sectionBlock(-1, "", ""));
+      $$("#isf_sections .isx-remove-section").forEach((b) => (b.onclick = () => b.closest(".isx-section-block").remove()));
+    }
+
+    const collectList = (id) => $$("#" + id + " input").map((i) => i.value.trim()).filter(Boolean);
+
+    async function saveForm() {
+      const { type, item } = state.editing;
+      const lang = state.lang;
+      let payload;
+      if (type === "product") {
+        payload = {
+          category: $("#isf_category").value,
+          name: i18nSet(item && item.name, lang, $("#isf_name").value.trim()),
+          description: i18nSet(item && item.description, lang, $("#isf_description").value.trim()),
+          features: i18nListSet(item && item.features, lang, collectList("isf_features")),
+          tags: i18nListSet(item && item.tags, lang, collectList("isf_tags")),
+          image: $("#isf_image").value.trim(),
+          images: $("#isf_images").value.split("\n").map((s) => s.trim()).filter(Boolean),
+          status: $("#isf_status").value,
+          sort_order: parseInt($("#isf_sort").value || "0", 10)
+        };
+        const pid = $("#isf_id").value.trim();
+        if (pid) payload.id = pid;
+      } else {
+        const orig = state.editing.origSections;
+        const sections = $$("#isf_sections .isx-section-block").map((block) => {
+          const h = block.querySelector(".isx-sec-h").value.trim();
+          const p = block.querySelector(".isx-sec-p").value.trim();
+          const oi = parseInt(block.dataset.origIdx, 10);
+          if (oi >= 0 && orig[oi]) return { h: i18nSet(orig[oi].h, lang, h), p: i18nSet(orig[oi].p, lang, p) };
+          return { h: { [lang]: h }, p: { [lang]: p } };
+        });
+        payload = {
+          slug: $("#isf_slug").value.trim(),
+          category: $("#isf_category").value,
+          title: i18nSet(item && item.title, lang, $("#isf_title").value.trim()),
+          intro: i18nSet(item && item.intro, lang, $("#isf_intro").value.trim()),
+          excerpt: i18nSet(item && item.excerpt, lang, $("#isf_excerpt").value.trim()),
+          sections,
+          status: $("#isf_status").value,
+          seo_keywords: $("#isf_seo_keywords").value.trim(),
+          seo_title: i18nSet(item && item.seo_title, lang, $("#isf_seo_title").value.trim()),
+          seo_description: i18nSet(item && item.seo_description, lang, $("#isf_seo_description").value.trim()),
+          featured_image: $("#isf_featured_image").value.trim(),
+          t_key: $("#isf_t_key").value.trim(),
+          featured: $("#isf_featured").checked
+        };
+        if (!payload.slug) { alert("请填写 slug"); return; }
+      }
+      try {
+        const saveBtn = $("#isSaveButton");
+        saveBtn.disabled = true;
+        if (type === "product") {
+          if (item) await api("/products/" + encodeURIComponent(item.id), { method: "PUT", body: payload });
+          else await api("/products", { method: "POST", body: payload });
+          await loadProducts();
+        } else {
+          if (item) await api("/blog/" + encodeURIComponent(item.slug), { method: "PUT", body: payload });
+          else await api("/blog", { method: "POST", body: payload });
+          await loadBlog();
+        }
+        closeEditor();
+      } catch (e) {
+        alert("保存失败:" + e.message);
+      } finally {
+        const b = $("#isSaveButton");
+        if (b) b.disabled = false;
+      }
+    }
+
+    async function delProduct(item) {
+      if (!confirm("删除产品 " + item.id + "?")) return;
+      try { await api("/products/" + encodeURIComponent(item.id), { method: "DELETE" }); await loadProducts(); }
+      catch (e) { alert("删除失败:" + e.message); }
+    }
+    async function delBlog(item) {
+      if (!confirm("删除文章 " + item.slug + "?")) return;
+      try { await api("/blog/" + encodeURIComponent(item.slug), { method: "DELETE" }); await loadBlog(); }
+      catch (e) { alert("删除失败:" + e.message); }
+    }
+
+    // ---- tab 切换 + 懒加载 ----
+    const LOADERS = {
+      dashboard: loadDashboard,
+      products: loadProducts,
+      blog: loadBlog,
+      contact: loadContacts,
+      reviews: loadReviews,
+      media: loadMedia,
+      settings: loadSettings
+    };
+    const LOAD_KEYS = { dashboard: "dashboard", products: "products", blog: "blog", contact: "contact", reviews: "reviews", media: "media", settings: "settings" };
+    function setTab(tab) {
+      state.tab = tab;
+      $$(".isx-tab").forEach((t) => t.classList.toggle("active", t.dataset.isxTab === tab));
+      $$("section.isx-panel").forEach((p) => (p.hidden = p.id !== "isxPanel-" + tab));
+      const key = LOAD_KEYS[tab];
+      if (!state.loaded[key]) LOADERS[tab]();
+      if (tab === "dashboard" && state.loaded.dashboard) loadDashboard(); // 总览每次进都刷新
+    }
+
+    // ---- wire ----
+    $$(".isx-tab").forEach((t) => (t.onclick = () => setTab(t.dataset.isxTab)));
+    $("#isLangSelect").onchange = (e) => {
+      state.lang = e.target.value;
+      if (state.loaded.products) renderProducts();
+      if (state.loaded.blog) renderBlog();
+      if (state.loaded.reviews) renderReviews();
+      if (state.editing) renderForm();
+    };
+    $("#isRefreshButton").onclick = () => {
+      loadStatus();
+      Object.values(LOADERS).forEach((fn) => fn());
+    };
+    $("#isProductAddButton").onclick = () => openEditor("product", null);
+    $("#isBlogAddButton").onclick = () => openEditor("blog", null);
+    $("#isMediaFile").onchange = (e) => { if (e.target.files.length) uploadMedia([...e.target.files]); e.target.value = ""; };
+    $("#isSetSave").onclick = saveSettings;
+    $$("#isReviewFilter .isx-chip").forEach((c) => (c.onclick = () => {
+      state.reviewFilter = c.dataset.rfilter;
+      $$("#isReviewFilter .isx-chip").forEach((x) => x.classList.toggle("active", x === c));
+      renderReviews();
+    }));
+
+    // view 激活时加载(避免每次页面加载都打 API)
+    let wasActive = false;
+    new MutationObserver(() => {
+      const active = view.classList.contains("active");
+      if (active && !wasActive) {
+        loadStatus();
+        if (!state.loaded.dashboard) loadDashboard();
+      }
+      wasActive = active;
+    }).observe(view, { attributes: true, attributeFilter: ["class"] });
+  })();
   </script>
   <script type="module" src="/src/prototype-api.ts"></script>
 </body>

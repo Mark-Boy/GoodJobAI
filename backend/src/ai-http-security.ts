@@ -19,6 +19,8 @@ function aiNetworkPolicy(rawBaseUrl: string): ProviderNetworkPolicy {
     allowedHosts: [baseUrl.hostname.toLocaleLowerCase()],
     allowedPathPrefixes: [basePath],
     allowedMethods: ["POST"],
+    // 本地模型（llama.cpp / Ollama）允许 http + 本机/内网地址
+    allowLocalHttp: true,
     timeoutMs: AI_HTTP_TIMEOUT_MS,
     maxResponseBytes: AI_MAX_RESPONSE_BYTES
   };

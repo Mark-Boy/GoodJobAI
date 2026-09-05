@@ -19,6 +19,7 @@ import { resolveTxt } from "node:dns/promises";
 import { AUTH_COOKIE_NAME, CSRF_COOKIE_NAME, canManageAccount, canManageAccounts, canManageRole, canSeeOwner, canSeePersonalData, canSeeTeam, createCsrfToken, csrfCookieOptions, hasIamPermission, hasIamScope, hashPassword, isPlatformIdentity, publicUser, requireAuth, sessionCookieOptions, signMfaSetupToken, signToken, validateAuthSecurity, verifyMfaSetupToken, verifyPassword } from "./auth.js";
 import { AccessControlOverviewError, buildAccessControlOverview } from "./access-control-overview.js";
 import { assertAiBaseUrlAllowed } from "./ai-http-security.js";
+import { registerIndependentSiteRoutes } from "./independent-site.js";
 import {
   recognizeBusinessCard,
   type BusinessCardRecognition
@@ -581,6 +582,8 @@ const apiLimiter = rateLimit({
 });
 app.use("/api", apiLimiter);
 app.use("/api/integrations", integrationHttpRouter);
+app.use("/api/independent-site", requireAuth);
+registerIndependentSiteRoutes(app);
 
 function iamBusinessPermission(req: Request) {
   const pathName = req.originalUrl.split("?")[0];

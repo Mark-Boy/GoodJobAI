@@ -1917,6 +1917,7 @@ export async function createMysqlStore(
     ...store.agentJobIdempotencyAliases.filter((item) => loadedJobIds.has(item.jobId))
   );
 
+  const userCountBeforeSeed = store.users.length;
   if (!store.users.length) {
     if (!seedDevelopmentData) {
       const email = process.env.INITIAL_ADMIN_EMAIL?.trim().toLowerCase();
@@ -2041,6 +2042,10 @@ export async function createMysqlStore(
   if (missingSeedUsers.length) {
     store.users.push(...missingSeedUsers);
     await store.persist();
+  }
+  // 种子用户（含 super_admin）在 IAM 基础表初始化之后才入库；本次若新增了用户，补跑一次以生成 platform_operators 等行
+  if (store.users.length > userCountBeforeSeed) {
+    await ensureIamFoundationSchema(pool);
   }
   if (missingDefaultProviders.length && store.users.length) {
     await store.persist();

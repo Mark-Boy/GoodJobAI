@@ -63,3 +63,8 @@ export function isForbiddenNetworkHostname(hostname: string) {
     || normalized.endsWith(".internal")
     || normalized.endsWith(".home.arpa");
 }
+
+// 本地模型服务（llama.cpp / Ollama 等）：http + 本机/内网地址
+export function isLocalHttpUrl(url: URL): boolean {
+  return url.protocol === "http:" && isForbiddenNetworkHostname(url.hostname);
+}

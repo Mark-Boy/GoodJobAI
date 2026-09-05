@@ -3874,6 +3874,7 @@ const aiProviderPresets: Record<string, {
   groq: { label: "Groq", protocol: "openai-compatible", baseUrl: "https://api.groq.com/openai/v1", model: "llama-3.1-70b-versatile", name: "Groq 高速模型" },
   openrouter: { label: "OpenRouter", protocol: "openai-compatible", baseUrl: "https://openrouter.ai/api/v1", model: "openai/gpt-4o-mini", name: "OpenRouter 聚合模型" },
   ollama: { label: "Ollama", protocol: "openai-compatible", baseUrl: "http://127.0.0.1:11434/v1", model: "qwen2.5:7b", name: "本地 Ollama 模型" },
+  llamacpp: { label: "llama.cpp", protocol: "openai-compatible", baseUrl: "http://127.0.0.1:8080/v1", model: "local-model", name: "本地 llama.cpp 模型" },
   custom: { label: "自定义", protocol: "openai-compatible", baseUrl: "https://example.com/v1", model: "your-model-name", name: "自定义兼容模型" }
 };
 

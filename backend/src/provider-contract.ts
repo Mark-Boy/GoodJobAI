@@ -96,6 +96,8 @@ export interface ProviderNetworkPolicy {
   redirectPathPrefixes?: string[];
   allowedPaths?: string[];
   allowedMethods: Array<"GET" | "HEAD" | "POST">;
+  /** 允许 http + 本机/内网地址（本地模型服务，如 llama.cpp / Ollama） */
+  allowLocalHttp?: boolean;
   redirectHosts?: string[];
   maxRedirects?: number;
   maxResponseBytes?: number;
