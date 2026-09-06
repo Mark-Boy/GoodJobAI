@@ -104,7 +104,8 @@ export function createPlatformMfaService(pool: mysql.Pool): PlatformMfaService {
       if (!one<{ enabled: boolean }>(mfaResult)?.enabled) fail(409, "请先完成平台 MFA 注册");
       const challengeId = `mfac_${randomUUID().replaceAll("-", "")}`;
       const expiresAt = new Date(Date.now() + 5 * 60_000).toISOString();
-      await pool.query(`INSERT INTO platform_mfa_challenges (id, operator_id, expires_at, created_at) VALUES (?, ?, ?, NOW(3))`, [challengeId, current.id, expiresAt]);
+      // ponytail: expires_at 用 MySQL NOW(3) 计算(与 created_at/locked_until 同时钟),避免 ISO 字符串被严格模式 DATETIME 拒绝;响应里的 expiresAt 仅展示用
+      await pool.query(`INSERT INTO platform_mfa_challenges (id, operator_id, expires_at, created_at) VALUES (?, ?, DATE_ADD(NOW(3), INTERVAL 5 MINUTE), NOW(3))`, [challengeId, current.id]);
       return { challengeId, expiresAt };
     },
     async enroll(actor) {
