@@ -4326,7 +4326,7 @@ app.post("/api/accounts", requireAuth, asyncRoute(async (req, res) => {
     res.status(409).json({ message: "账号邮箱已存在" });
     return;
   }
-  const teamId = req.user!.teamId;
+  const teamId = (req.user!.role === "super_admin" && body.teamId) || req.user!.teamId;
   if (!teamId) {
     res.status(400).json({ message: "超级管理员创建账号时必须指定团队编号" });
     return;

@@ -508,7 +508,7 @@ async function seedLegacyCompatibility(pool: mysql.Pool) {
      membership_auth_version, joined_at, created_at, updated_at)
     SELECT CONCAT('mem_', LEFT(SHA2(CONCAT(t.id, ':', u.id), 256), 40)),
       t.id, u.id, '', 'active',
-      CONCAT('org_', LEFT(SHA2(t.id, 256), 32)), 1, NOW(3), NOW(3)
+      CONCAT('org_', LEFT(SHA2(t.id, 256), 32)), 1, NOW(3), NOW(3), NOW(3)
     FROM users u
     CROSS JOIN tenants t
     WHERE u.role = 'super_admin'
