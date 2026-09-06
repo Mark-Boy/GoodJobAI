@@ -503,6 +503,16 @@ async function seedLegacyCompatibility(pool: mysql.Pool) {
     FROM users u
     WHERE u.role <> 'super_admin' AND u.team_id <> '' AND u.team_id <> 'all'
     ON DUPLICATE KEY UPDATE status=VALUES(status), primary_org_unit_id=VALUES(primary_org_unit_id), updated_at=NOW(3)`);
+  await pool.query(`INSERT INTO tenant_memberships
+    (id, tenant_id, user_id, title, status, primary_org_unit_id,
+     membership_auth_version, joined_at, created_at, updated_at)
+    SELECT CONCAT('mem_', LEFT(SHA2(CONCAT(t.id, ':', u.id), 256), 40)),
+      t.id, u.id, '', 'active',
+      CONCAT('org_', LEFT(SHA2(t.id, 256), 32)), 1, NOW(3), NOW(3)
+    FROM users u
+    CROSS JOIN tenants t
+    WHERE u.role = 'super_admin'
+    ON DUPLICATE KEY UPDATE status=VALUES(status), primary_org_unit_id=VALUES(primary_org_unit_id), updated_at=NOW(3)`);
   await pool.query(`INSERT INTO organization_memberships
     (id, tenant_id, membership_id, org_unit_id, relation_type, is_leader,
      valid_from, created_at)
@@ -547,6 +557,15 @@ async function seedLegacyCompatibility(pool: mysql.Pool) {
     JOIN users u ON u.id = tm.user_id
     JOIN roles r ON r.tenant_id = tm.tenant_id AND r.code = CONCAT('legacy_', u.role)
     WHERE u.role IN ('sales','manager','admin')
+    ON DUPLICATE KEY UPDATE status='active', scope_anchor_org_unit_id=VALUES(scope_anchor_org_unit_id)`);
+  await pool.query(`INSERT INTO member_role_assignments
+    (id, tenant_id, membership_id, role_id, scope_anchor_org_unit_id,
+     status, reason, created_at)
+    SELECT CONCAT('mra_', LEFT(SHA2(CONCAT(tm.tenant_id, ':', tm.id, ':', r.id), 256), 40)),
+      tm.tenant_id, tm.id, r.id, tm.primary_org_unit_id, 'active', 'super admin tenant role', NOW(3)
+    FROM tenant_memberships tm
+    JOIN users u ON u.id = tm.user_id AND u.role = 'super_admin'
+    JOIN roles r ON r.tenant_id = tm.tenant_id AND r.code = 'legacy_admin'
     ON DUPLICATE KEY UPDATE status='active', scope_anchor_org_unit_id=VALUES(scope_anchor_org_unit_id)`);
   await pool.query(`INSERT INTO authorization_revisions (tenant_id, membership_id, revision, changed_at)
     SELECT id, '', authz_revision, NOW(3) FROM tenants

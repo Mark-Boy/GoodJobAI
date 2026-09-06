@@ -95,7 +95,9 @@ export function publicUser(user: ReturnType<typeof getStore>["users"][number]): 
     inboundUidValidity: user.inboundUidValidity || "",
     lastDevelopmentEmailAt: user.lastDevelopmentEmailAt || "",
     lastDevelopmentEmailTo: user.lastDevelopmentEmailTo || "",
-    lastDevelopmentEmailSubject: user.lastDevelopmentEmailSubject || ""
+    lastDevelopmentEmailSubject: user.lastDevelopmentEmailSubject || "",
+    iamSource: (user as SessionUser).iamSource,
+    iamPermissions: (user as SessionUser).iamPermissions
   };
 }
 
@@ -237,7 +239,7 @@ export function hasIamScope(
 }
 
 export function isPlatformIdentity(user: IamActor | undefined) {
-  return user?.iamSource === "platform" || (!user?.iamSource && user?.role === "super_admin");
+  return user?.iamSource === "platform";
 }
 
 export function createCsrfToken() {
@@ -287,13 +289,13 @@ export function csrfCookieOptions() {
 }
 
 export function canSeeOwner(user: IamActor, ownerId: string, teamId: string) {
+  if (user.role === "super_admin") return true;
   if (user.iamDataScope) {
     return teamId === user.teamId
       && (user.iamDataScope.tenantWide || user.iamDataScope.ownerIds.includes(ownerId));
   }
   if (isPlatformIdentity(user)) return false;
   if (user.iamPermissions) return false;
-  if (user.role === "super_admin") return true;
   if (user.role === "admin" || user.role === "manager") return user.teamId === teamId;
   return user.id === ownerId;
 }
@@ -311,14 +313,14 @@ export function canManageAccounts(user?: SessionUser) {
 }
 
 export function canManageRole(operator: SessionUser, targetRole: string) {
-  return hasIamPermission(operator, "member.manage")
-    && !isPlatformIdentity(operator)
-    && ["sales", "manager"].includes(targetRole);
+  if (!hasIamPermission(operator, "member.manage") || isPlatformIdentity(operator)) return false;
+  if (targetRole === "super_admin") return operator.role === "super_admin";
+  if (targetRole === "admin") return operator.role === "admin" || operator.role === "super_admin";
+  return ["sales", "manager"].includes(targetRole);
 }
 
 export function canManageAccount(operator: SessionUser, target: SessionUser) {
-  return hasIamPermission(operator, "member.manage")
-    && !isPlatformIdentity(operator)
-    && target.teamId === operator.teamId
-    && target.role !== "super_admin";
+  if (!hasIamPermission(operator, "member.manage") || isPlatformIdentity(operator)) return false;
+  if (target.role === "super_admin" && operator.role !== "super_admin") return false;
+  return operator.role === "super_admin" || target.teamId === operator.teamId;
 }

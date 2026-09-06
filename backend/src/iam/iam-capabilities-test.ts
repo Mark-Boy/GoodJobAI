@@ -24,9 +24,12 @@ assert.equal(manager.permissions["role.manage"], undefined);
 const admin = buildLegacyCapabilitySnapshot(actor("admin"));
 assert.ok(admin.permissions["role.manage"]?.includes("tenant"));
 
-const platform = buildLegacyCapabilitySnapshot(actor("super_admin"));
-assert.equal(platform.source, "platform");
-assert.equal(platform.permissions["audit.read"], undefined);
-assert.ok(platform.permissions["platform.audit.read"]?.includes("tenant"));
+const superAdmin = buildLegacyCapabilitySnapshot(actor("super_admin"));
+assert.equal(superAdmin.source, "legacy_compatibility");
+assert.equal(superAdmin.roleNames[0], "超级管理员");
+assert.ok(superAdmin.permissions["member.manage"]?.includes("tenant"));
+assert.ok(superAdmin.permissions["customer.read"]?.includes("tenant"));
+assert.ok(superAdmin.permissions["audit.read"]?.includes("tenant"));
+assert.equal(superAdmin.permissions["platform.audit.read"], undefined);
 
 console.log(JSON.stringify({ ok: true, capabilitySnapshot: true, roleNamesIgnoredByUi: true }, null, 2));

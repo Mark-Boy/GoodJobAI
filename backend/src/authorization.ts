@@ -114,7 +114,7 @@ const policies: Record<AuthorizationResource, PermissionPolicy> = {
 };
 
 function platformIdentity(actor: SessionUser) {
-  return actor.iamSource === "platform" || (!actor.iamSource && actor.role === "super_admin");
+  return actor.iamSource === "platform";
 }
 
 function permissionScopes(actor: SessionUser, permissionCode: string) {

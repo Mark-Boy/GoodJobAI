@@ -1561,19 +1561,18 @@ export async function createMysqlStore(
     mode: "mysql",
     getIamCapabilitySnapshot: (actor) => loadIamCapabilitySnapshot(pool, actor),
     validateIamSession: async (actor) => {
-      if (actor.iamSource === "platform" || (!actor.iamSource && actor.role === "super_admin")) {
-        const [operatorRows] = await pool.query(`SELECT id FROM platform_operators WHERE user_id = ? AND status = 'active' LIMIT 1`, [actor.id]);
-        return { valid: (operatorRows as unknown[]).length > 0, message: "平台运维身份已停用" };
-      }
-      const [membershipRows] = await pool.query(
-        `SELECT tm.id FROM tenant_memberships tm
+      const [rows] = await pool.query(
+        `SELECT 1 FROM tenant_memberships tm
          JOIN tenants t ON t.id = tm.tenant_id AND t.status IN ('trial','active')
-         WHERE tm.user_id = ? AND tm.tenant_id = ? AND tm.status = 'active' LIMIT 1`,
-        [actor.id, actor.teamId]
+         WHERE tm.user_id = ? AND tm.status = 'active'
+         UNION
+         SELECT 1 FROM platform_operators WHERE user_id = ? AND status = 'active' LIMIT 1`,
+        [actor.id, actor.id]
       );
-      return { valid: (membershipRows as unknown[]).length > 0, message: "公司已暂停或成员身份已失效" };
+      return { valid: (rows as unknown[]).length > 0, message: "公司已暂停或成员身份已失效" };
     },
     resolveIamDataScope: async (actor, permissionCode) => {
+      if (actor.role === "super_admin") return { tenantWide: true, ownerIds: [] };
       const [scopeRows] = await pool.query(
         `SELECT rpb.scope_mode,
           COALESCE(mra.scope_anchor_org_unit_id, tm.primary_org_unit_id) AS anchor_org_unit_id

@@ -6542,7 +6542,7 @@ function hasIamCapability(permissionCode: string) {
 }
 
 function isPlatformOperator(user = state.user) {
-  return Boolean(user && (user.role === "super_admin" || state.iamCapabilities?.source === "platform" || user.iamSource === "platform"));
+  return Boolean(user && (state.iamCapabilities?.source === "platform" || user.iamSource === "platform"));
 }
 
 function canAccessWorkspaceView(view: string, user = state.user) {
@@ -20525,14 +20525,15 @@ async function loadAccessControl(teamId = "") {
   if (!state.user || !canAccessWorkspaceView(activeView, state.user)) return;
   accessControlLoading();
   try {
+    const crossTenant = state.iamCapabilities?.source === "platform" || state.user?.role === "super_admin";
     const queryParams = new URLSearchParams();
-    if (state.iamCapabilities?.source === "platform" && teamId) queryParams.set("teamId", teamId);
+    if (crossTenant && teamId) queryParams.set("teamId", teamId);
     queryParams.set("page", activeAccessControlPage());
     const query = `?${queryParams.toString()}`;
     accessControlOverview = await api<AccessControlOverview>(`/api/access-control/overview${query}`);
     if (activeAccessControlPage() === "audit" && accessControlOverview.company) {
       const auditQuery = new URLSearchParams({ limit: "100" });
-      if (state.iamCapabilities?.source === "platform") auditQuery.set("tenantId", accessControlOverview.company.id);
+      if (crossTenant) auditQuery.set("tenantId", accessControlOverview.company.id);
       accessControlAuditEvents = (await api<{ events: AccessAuditEvent[] }>(`/api/v1/access-audit-events?${auditQuery.toString()}`)).events;
     }
     if (!accessControlSelectedRoleId || !accessControlOverview.roles.some((role) => role.id === accessControlSelectedRoleId)) {
@@ -20949,10 +20950,10 @@ function renderAccountMetrics(accounts: User[], canManage: boolean) {
 }
 
 function canManageRoleInUi(account: User) {
-  return Boolean(state.user && hasIamCapability("member.manage")
-    && account.id !== state.user.id
-    && account.teamId === state.user.teamId
-    && account.role !== "super_admin");
+  const me = state.user;
+  if (!me || !hasIamCapability("member.manage") || account.id === me.id) return false;
+  if (account.role === "super_admin" && me.role !== "super_admin") return false;
+  return me.role === "super_admin" || account.teamId === me.teamId;
 }
 
 function accountBusinessScope(role: Role) {
@@ -20974,7 +20975,7 @@ function openAccountModal() {
   const roleOptions = [
     `<option value="sales">业务员</option>`,
     `<option value="manager">销售主管</option>`,
-    state.user.role === "super_admin" ? `<option value="admin">团队管理员</option>` : "",
+    state.user.role === "super_admin" || state.user.role === "admin" ? `<option value="admin">团队管理员</option>` : "",
     state.user.role === "super_admin" ? `<option value="super_admin">超级管理员</option>` : ""
   ].join("");
   const teamField = state.user.role === "super_admin"

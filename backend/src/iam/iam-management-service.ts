@@ -106,9 +106,9 @@ function assertProtectedRoleBaseline(roleCode: string, entries: Array<{ permissi
 }
 
 function selectedTenant(actor: SessionUser, requested: string | undefined) {
-  const platform = isPlatformIdentity(actor);
-  const tenantId = platform ? String(requested || "").trim() : actor.teamId;
-  if (!tenantId || (!platform && requested && requested !== actor.teamId)) {
+  const crossTenant = isPlatformIdentity(actor) || actor.role === "super_admin";
+  const tenantId = crossTenant ? String(requested || "").trim() : actor.teamId;
+  if (!tenantId || (!crossTenant && requested && requested !== actor.teamId)) {
     throw Object.assign(new Error("公司上下文不存在或不可访问"), { status: 404 });
   }
   return tenantId;
@@ -126,9 +126,15 @@ async function assertTenantOperator(pool: Queryable, actor: SessionUser, tenantI
     if (!found) throw Object.assign(new Error("当前平台运维账号没有该平台权限"), { status: 403 });
     return;
   }
+  const crossTenantLookup = !tenantId && actor.role === "super_admin";
   const [snapshot, membershipResult] = await Promise.all([
     loadIamCapabilitySnapshot(pool as mysql.Pool, actor),
-    pool.query(`SELECT id FROM tenant_memberships WHERE tenant_id = ? AND user_id = ? AND status = 'active' LIMIT 1`, [tenantId, actor.id])
+    pool.query(
+      crossTenantLookup
+        ? `SELECT id FROM tenant_memberships WHERE user_id = ? AND status = 'active' LIMIT 1`
+        : `SELECT id FROM tenant_memberships WHERE tenant_id = ? AND user_id = ? AND status = 'active' LIMIT 1`,
+      crossTenantLookup ? [actor.id] : [tenantId, actor.id]
+    )
   ]);
   if (!one(membershipResult[0])) throw Object.assign(new Error("当前账号不属于该公司"), { status: 403 });
   if (!snapshot.permissions[permission]?.length) throw Object.assign(new Error("当前账号没有执行该操作的权限"), { status: 403 });
@@ -252,8 +258,8 @@ export function createIamManagementService(pool: mysql.Pool): IamManagementServi
       if (actor.role !== "admin" && actor.role !== "super_admin") {
         throw Object.assign(new Error("权限管理仅管理员和超级管理员可访问"), { status: 403 });
       }
-      if (isPlatformIdentity(actor) && !requestedTenantId) {
-        await assertTenantOperator(pool, actor, "", "platform.tenant.metadata.read");
+      if ((isPlatformIdentity(actor) || actor.role === "super_admin") && !requestedTenantId) {
+        await assertTenantOperator(pool, actor, "", isPlatformIdentity(actor) ? "platform.tenant.metadata.read" : "member.read");
         const [tenantRows] = await pool.query(`SELECT t.id, t.name, COUNT(tm.id) AS member_count FROM tenants t LEFT JOIN tenant_memberships tm ON tm.tenant_id = t.id GROUP BY t.id, t.name ORDER BY t.name`);
         return { foundation: { schemaVersion: IAM_FOUNDATION_SCHEMA_VERSION, mode: "iam", permissionCount: IAM_PERMISSION_CATALOG.length }, companies: rows<any>(tenantRows).map((row) => ({ id: row.id, name: row.name, memberCount: Number(row.member_count) })), company: null, metrics: null, organizationUnits: [], roles: [], permissions: [], members: [] };
       }

@@ -210,7 +210,7 @@ const systemNavigation = prototype.slice(
 assert.equal(systemNavigation.includes('data-view="member-management"'), false, "权限模块不得继续混在系统配置导航中");
 assert.match(prototype, /aria-label="权限管理"[\s\S]*data-view="member-management"[\s\S]*data-view="permission-audit"/, "权限页面必须集中在独立权限管理分组");
 assert.match(apiLayer, /isAccessControlView\(view\) && !isSystemAdministrator\(user\)/, "权限页面必须额外校验管理员或超级管理员身份");
-assert.match(apiLayer, /function isPlatformOperator[\s\S]*user\.role === "super_admin"/, "超级管理员必须被识别为平台运维身份");
+assert.match(apiLayer, /function isPlatformOperator\(user = state\.user\) \{\s*return Boolean\(user && \(state\.iamCapabilities\?\.source === "platform"/, "平台运维身份只按 IAM 快照来源识别，超级管理员属于租户最高角色");
 assert.match(apiLayer, /if \(isPlatformOperator\(user\)\) \{[\s\S]*return view === "platform-operations"/, "平台运维账号只能进入运维中心");
 assert.match(apiLayer, /view = platformOperator \? "platform-operations" : "dashboard"/, "平台运维账号非法跳转时必须返回运维中心");
 assert.match(prototype, /运维专用账号[\s\S]*业务模块，请登录其他账号/, "运维中心必须明确提示业务模块使用其他账号");

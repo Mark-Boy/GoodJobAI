@@ -63,7 +63,7 @@ export function buildAccessControlOverview(input: {
   canView?: boolean;
 }) {
   const { actor, users, companyProfiles } = input;
-  if (input.canView !== true && !hasIamPermission(actor, "role.read") && !isPlatformIdentity(actor)) {
+  if (input.canView !== true && actor.role !== "super_admin" && !hasIamPermission(actor, "role.read") && !isPlatformIdentity(actor)) {
     throw new AccessControlOverviewError(403, "当前账号没有组织与权限查看权限");
   }
   const tenantIds = uniqueTenantIds(users);
@@ -73,8 +73,9 @@ export function buildAccessControlOverview(input: {
     memberCount: users.filter((user) => user.teamId === teamId && user.role !== "super_admin").length
   }));
   const requestedTeamId = String(input.requestedTeamId || "").trim();
-  const teamId = isPlatformIdentity(actor) ? requestedTeamId : actor.teamId;
-  if (!isPlatformIdentity(actor) && requestedTeamId && requestedTeamId !== actor.teamId) {
+  const crossTenant = isPlatformIdentity(actor) || actor.role === "super_admin";
+  const teamId = crossTenant ? requestedTeamId : actor.teamId;
+  if (!crossTenant && requestedTeamId && requestedTeamId !== actor.teamId) {
     throw new AccessControlOverviewError(404, "公司不存在");
   }
   if (!teamId) {

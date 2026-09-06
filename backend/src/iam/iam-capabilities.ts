@@ -31,7 +31,7 @@ function addScope(
 
 export function buildLegacyCapabilitySnapshot(actor: SessionUser): IamCapabilitySnapshot {
   const permissions: Record<string, IamScopeMode[]> = {};
-  if (actor.iamSource === "platform" || (!actor.iamSource && actor.role === "super_admin")) {
+  if (actor.iamSource === "platform") {
     PLATFORM_PERMISSION_CODES.forEach((permissionCode) => addScope(permissions, permissionCode, "tenant"));
     return {
       schemaVersion: IAM_FOUNDATION_SCHEMA_VERSION,
@@ -44,7 +44,7 @@ export function buildLegacyCapabilitySnapshot(actor: SessionUser): IamCapability
       generatedAt: new Date().toISOString()
     };
   }
-  const legacyRole = actor.role as "sales" | "manager" | "admin";
+  const legacyRole = actor.role === "super_admin" ? "admin" : (actor.role as "sales" | "manager" | "admin");
   for (const permission of IAM_PERMISSION_CATALOG) {
     const scope = legacyPermissionScope(legacyRole, permission.code);
     if (scope) addScope(permissions, permission.code, scope);
@@ -56,7 +56,7 @@ export function buildLegacyCapabilitySnapshot(actor: SessionUser): IamCapability
     revision: `legacy:${actor.authVersion}`,
     source: "legacy_compatibility",
     permissions,
-    roleNames: [actor.role === "admin" ? "公司管理员" : actor.role === "manager" ? "销售主管" : "业务员"],
+    roleNames: [actor.role === "super_admin" ? "超级管理员" : actor.role === "admin" ? "公司管理员" : actor.role === "manager" ? "销售主管" : "业务员"],
     generatedAt: new Date().toISOString()
   };
 }
@@ -65,7 +65,7 @@ export async function loadIamCapabilitySnapshot(
   pool: mysql.Pool,
   actor: SessionUser
 ): Promise<IamCapabilitySnapshot> {
-  if (actor.iamSource === "platform" || (!actor.iamSource && actor.role === "super_admin")) {
+  if (actor.iamSource === "platform") {
     const [permissionRows] = await pool.query(
       `SELECT DISTINCT prp.permission_code, pr.name AS role_name
        FROM platform_operators po
@@ -96,7 +96,8 @@ export async function loadIamCapabilitySnapshot(
     `SELECT tm.id, tm.tenant_id, tm.membership_auth_version, t.authz_revision
      FROM tenant_memberships tm
      JOIN tenants t ON t.id = tm.tenant_id AND t.status IN ('trial','active')
-     WHERE tm.user_id = ? AND tm.tenant_id = ? AND tm.status = 'active'
+     WHERE tm.user_id = ? AND tm.status = 'active'
+     ORDER BY tm.tenant_id = ? DESC, tm.tenant_id
      LIMIT 1`,
     [actor.id, actor.teamId]
   );

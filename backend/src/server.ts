@@ -1433,11 +1433,11 @@ function collaborationUser(userId: string) {
 }
 
 function canViewDailyReport(user: SessionUser, report: ReturnType<typeof getStore>["dailyReports"][number]) {
+  if (user.role === "super_admin") return true;
   if (user.iamDataScope) {
     return report.teamId === user.teamId
       && (user.iamDataScope.tenantWide || user.iamDataScope.ownerIds.includes(report.ownerId));
   }
-  if (user.role === "super_admin") return true;
   if (user.role === "manager" || user.role === "admin") return report.teamId === user.teamId;
   return report.ownerId === user.id;
 }
