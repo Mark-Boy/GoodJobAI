@@ -6538,6 +6538,8 @@ const viewPermissionRequirements: Record<string, string> = {
 };
 
 function hasIamCapability(permissionCode: string) {
+  // super_admin 是租户最高角色:空权限快照不能遮蔽角色权限;platform.* 保留给平台运维身份
+  if (state.user?.role === "super_admin" && !permissionCode.startsWith("platform.")) return true;
   return Boolean(state.iamCapabilities?.permissions[permissionCode]?.length);
 }
 
