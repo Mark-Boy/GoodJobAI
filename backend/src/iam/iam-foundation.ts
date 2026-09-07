@@ -483,7 +483,7 @@ async function seedLegacyCompatibility(pool: mysql.Pool) {
       'Asia/Shanghai', 'zh-CN', 1, NOW(3), NOW(3)
     FROM users u
     LEFT JOIN company_profiles cp ON cp.team_id = u.team_id
-    WHERE u.role <> 'super_admin' AND u.team_id <> '' AND u.team_id <> 'all'
+    WHERE u.role <> 'super_admin' AND u.team_id <> ''
     ON DUPLICATE KEY UPDATE name=VALUES(name), updated_at=NOW(3)`);
   await pool.query(`INSERT INTO organization_units
     (id, tenant_id, parent_id, name, code, unit_type, path, depth, sort_order,
@@ -501,7 +501,7 @@ async function seedLegacyCompatibility(pool: mysql.Pool) {
       u.team_id, u.id, '', IF(u.status='active','active','suspended'),
       CONCAT('org_', LEFT(SHA2(u.team_id, 256), 32)), 1, u.created_at, NOW(3), NOW(3)
     FROM users u
-    WHERE u.role <> 'super_admin' AND u.team_id <> '' AND u.team_id <> 'all'
+    WHERE u.role <> 'super_admin' AND u.team_id <> ''
     ON DUPLICATE KEY UPDATE status=VALUES(status), primary_org_unit_id=VALUES(primary_org_unit_id), updated_at=NOW(3)`);
   await pool.query(`INSERT INTO tenant_memberships
     (id, tenant_id, user_id, title, status, primary_org_unit_id,
