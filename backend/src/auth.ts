@@ -220,8 +220,9 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
 export function hasIamPermission(user: IamActor | undefined, permissionCode: string) {
   if (!user) return false;
-  if (user.iamPermissions) return Boolean(user.iamPermissions[permissionCode]?.length);
+  // super_admin 是租户最高角色:必须优先于 iamPermissions 判定,否则空权限快照 {} 会遮蔽角色权限
   if (user.role === "super_admin") return true;
+  if (user.iamPermissions) return Boolean(user.iamPermissions[permissionCode]?.length);
   return Boolean(legacyPermissionScope(user.role, permissionCode));
 }
 
@@ -231,9 +232,9 @@ export function hasIamScope(
   acceptedScopes: Array<"self" | "org_unit" | "org_subtree" | "tenant" | "public_pool">
 ) {
   if (!user) return false;
+  if (user.role === "super_admin") return acceptedScopes.includes("tenant");
   const scopes = user.iamPermissions?.[permissionCode];
   if (scopes) return scopes.some((scope) => acceptedScopes.includes(scope));
-  if (user.role === "super_admin") return acceptedScopes.includes("tenant");
   if (user.iamPermissions) return false;
   const legacyScope = legacyPermissionScope(user.role, permissionCode);
   return Boolean(legacyScope && acceptedScopes.includes(legacyScope));

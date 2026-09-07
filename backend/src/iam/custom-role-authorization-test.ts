@@ -40,6 +40,12 @@ const denied = { ...customRoleActor, iamPermissions: {}, iamDataScope: undefined
 assert.equal(hasIamPermission(denied, "commission.manage"), false);
 assert.equal(canSeeOwner(denied, denied.id, denied.teamId), false);
 
+// 回归:super_admin 的空权限快照 {} 不能遮蔽角色权限(requireAuth 会用空快照覆盖 iamPermissions)
+const superAdminWithEmptySnapshot = { ...customRoleActor, role: "super_admin" as const, teamId: "all", iamPermissions: {}, iamDataScope: undefined };
+assert.equal(hasIamPermission(superAdminWithEmptySnapshot, "commission.manage"), true);
+assert.equal(hasIamPermission(superAdminWithEmptySnapshot, "customer.read"), true);
+assert.equal(hasIamScope(superAdminWithEmptySnapshot, "deal.stage.override", ["org_subtree", "tenant"]), true);
+
 const platform = { ...customRoleActor, iamSource: "platform" as const, iamDataScope: undefined };
 assert.equal(isPlatformIdentity(platform), true);
 assert.equal(canSeeOwner(platform, "sales_child", "tenant_a"), false);
