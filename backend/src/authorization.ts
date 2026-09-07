@@ -120,7 +120,7 @@ function platformIdentity(actor: SessionUser) {
 function permissionScopes(actor: SessionUser, permissionCode: string) {
   if (actor.iamPermissions) return actor.iamPermissions[permissionCode] || [];
   if (platformIdentity(actor)) return [];
-  if (actor.role === "super_admin") return [];
+  if (actor.role === "super_admin") return ["tenant"];
   const scope = legacyPermissionScope(actor.role, permissionCode);
   return scope ? [scope] : [];
 }

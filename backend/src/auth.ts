@@ -221,7 +221,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 export function hasIamPermission(user: IamActor | undefined, permissionCode: string) {
   if (!user) return false;
   if (user.iamPermissions) return Boolean(user.iamPermissions[permissionCode]?.length);
-  if (user.role === "super_admin") return false;
+  if (user.role === "super_admin") return true;
   return Boolean(legacyPermissionScope(user.role, permissionCode));
 }
 
@@ -233,7 +233,8 @@ export function hasIamScope(
   if (!user) return false;
   const scopes = user.iamPermissions?.[permissionCode];
   if (scopes) return scopes.some((scope) => acceptedScopes.includes(scope));
-  if (user.iamPermissions || user.role === "super_admin") return false;
+  if (user.role === "super_admin") return acceptedScopes.includes("tenant");
+  if (user.iamPermissions) return false;
   const legacyScope = legacyPermissionScope(user.role, permissionCode);
   return Boolean(legacyScope && acceptedScopes.includes(legacyScope));
 }
